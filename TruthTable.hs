@@ -1,8 +1,14 @@
+-- | Task 1 - construct truth tables for given formulas
 module TruthTable where
 
 import Data.List
 import Data.Maybe
+import GHC.Show
+import GHC.Types
+import GHC.Classes
+import GHC.Base
 import Text.PrettyPrint
+
 
 -- | define the boolvalue type
 data BoolValue = T | F deriving (Show, Eq)
@@ -65,7 +71,8 @@ allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | statu
 
 -- | calculate the bool value of given formula and case status
 -- TEST:
--- >>> calculator (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
+-- >>> arg = (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
+-- >>> calculator arg
 calculator :: LogicFormula -> [(Char, BoolValue)] -> BoolValue
 calculator (Var v) status = fromMaybe (error ("Variable " ++ [v] ++ " not found in environment")) (lookup v status)
 calculator (Not formula) status = if calculator formula status == T then F else T
