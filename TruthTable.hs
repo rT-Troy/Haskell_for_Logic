@@ -2,12 +2,13 @@ module TruthTable where
 
 import Data.List
 import Data.Maybe
+import Text.PrettyPrint
 
 -- | define the boolvalue type
 data BoolValue = T | F deriving (Show, Eq)
 
 -- | Defining data type of basic logic notations
--- ¬ φ, φ ∧ ψ, φ ∨ ψ, φ → ψ, ⊥, ⊤ 
+-- φ, ¬ φ, φ ∧ ψ, φ ∨ ψ, φ → ψ, ⊥, ⊤ 
 data LogicFormula = Var Char    -- propositional variable
                    | Not LogicFormula
                    | LogicFormula :/\ LogicFormula
@@ -20,15 +21,17 @@ data LogicFormula = Var Char    -- propositional variable
 
 -- | main program
 -- TEST:
--- >>> formula1 = ((Var 'p') :\/ (Var 'd'))
--- >>> formula2 = ((Var 'q') :/\(Var 'r'))
+-- truthTable ((Var 'q') :/\ (Var 'r'))
+-- >>> formula1 = (Var 'p') :\/ (Var 'd')
+-- >>> formula2 = (Var 'q') :/\ Bottom
 -- >>> formulaComb = ((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))
--- >>> putStrLn (truthTable formulaComb)
--- >>> putStrLn (truthTable formula1)
--- WAS WAS WAS WAS WAS parse error (possibly incorrect indentation or mismatched brackets)
--- WAS WAS WAS WAS NOW parse error on input `)'
-truthTable :: LogicFormula -> String
-truthTable formula = firstRow ++ "\n" ++ intercalate "\n" [rowString formula status | status <- allPosStatus (variablesStr formula)]
+-- >>> truthTable formula2
+-- (q ∧ ⊥) 
+-- 0	q	Result
+-- T	F
+-- F	F
+truthTable :: LogicFormula -> Doc
+truthTable formula = formulaExpre formula <+> text ( "\n" ++ firstRow ++ "\n" ++ intercalate "\n" [rowString formula status | status <- allPosStatus (variablesStr formula)] )
   where
     firstRow = "0\t" ++ intercalate "\t" (map (\v -> [v]) (variablesStr formula)) ++ "\tResult"
     rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (variablesStr formula)) ++ "\t" ++ showBool (calculator formula status)
@@ -52,7 +55,8 @@ variablesStr Top = []
 
 -- | Generate a nested list of all possible variable assignments
 -- TEST:
--- >>> allPosStatus "pd"
+-- >>> variables = "pd"
+-- >>> allPosStatus variables
 allPosStatus :: [Char] -> [[(Char, BoolValue)]]
 allPosStatus [] = [[]]
 allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | status <- rest]
@@ -78,3 +82,12 @@ calculator Top _ = T
 showBool :: BoolValue -> String
 showBool T = "T"
 showBool F = "F"
+
+formulaExpre :: LogicFormula -> Doc
+formulaExpre (Var v) = text [v]
+formulaExpre (Not v) = parens (text "¬" <+> formulaExpre v)
+formulaExpre (formula1 :/\ formula2) = parens (formulaExpre formula1 <+> text "∧" <+> formulaExpre formula2)
+formulaExpre (formula1 :\/ formula2) = parens (formulaExpre formula1 <+> text "∨" <+> formulaExpre formula2)
+formulaExpre (formula1 :-> formula2) = parens (formulaExpre formula1 <+> text "→" <+> formulaExpre formula2)
+formulaExpre (Bottom) = text "⊥"
+formulaExpre (Top) = text "⊤"
