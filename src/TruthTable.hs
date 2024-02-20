@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 -- | Task 1 - construct truth tables for given formulas
 module TruthTable where
 
@@ -52,6 +53,7 @@ uniqVars (Neg formula) = uniqVars formula
 uniqVars (formula1 :/\ formula2) = nub (uniqVars formula1 ++ uniqVars formula2)
 uniqVars (formula1 :\/ formula2) = nub (uniqVars formula1 ++ uniqVars formula2)
 uniqVars (formula1 :-> formula2) = nub (uniqVars formula1 ++ uniqVars formula2)
+uniqVars (formula1 :<-> formula2) = nub (uniqVars formula1 ++ uniqVars formula2)
 uniqVars Bottom = []
 uniqVars Top = []
 
@@ -76,6 +78,7 @@ calculator (Neg formula) status = if calculator formula status == T then F else 
 calculator (formula1 :/\ formula2) status = if calculator formula1 status == T && calculator formula2 status == T then T else F
 calculator (formula1 :\/ formula2) status = if calculator formula1 status == F && calculator formula2 status == F then F else T
 calculator (formula1 :-> formula2) status = if calculator formula1 status == T && calculator formula2 status == F then F else T
+--TODO: :<->
 calculator Bottom _ = F
 calculator Top _ = T
 
@@ -95,5 +98,7 @@ formulaExpre (formula1 :\/ formula2) = parens (formulaExpre formula1 <+>
                                          text "∨" <+> formulaExpre formula2)
 formulaExpre (formula1 :-> formula2) = parens (formulaExpre formula1 <+>
                                          text "→" <+> formulaExpre formula2)
+formulaExpre (formula1 :<-> formula2) = parens (formulaExpre formula1 <+>
+                                         text "↔" <+> formulaExpre formula2)
 formulaExpre (Bottom) = text "⊥"
 formulaExpre (Top) = text "⊤"

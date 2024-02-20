@@ -5,7 +5,7 @@ module Common where
 data BoolValue = T | F deriving (Show, Eq)
 
 
--- | Basic well-formed rules defination
+-- | Basic well-formed rules definition
 data LogicFormula = Var Char                          -- propositional variable
                    | Neg LogicFormula                 -- ¬ φ
                    | LogicFormula :/\ LogicFormula    -- φ ∧ ψ
