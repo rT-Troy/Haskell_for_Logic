@@ -1,24 +1,28 @@
-module CNF where
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
+
+-- | Task 2 - Implementing CNF algorithm and DPLL algorithm using Haskell functions
+module CNF () where
 --import Data.List.Split (splitOneOf)
-import Data.List (nub)
+import Data.List
+
+-- | define the boolvalue type
 
 data BoolValue = T | F deriving (Show, Eq)
 
-data LogicFormula = Var Char    -- propositional variable
-                   | Not LogicFormula
-                   | LogicFormula :/\ LogicFormula
-                   | LogicFormula :\/ LogicFormula
-                   | LogicFormula :-> LogicFormula
-                   | Bottom
-                   | Top
+-- | Basic well-formed rules defination
+data LogicFormula = Var Char                          -- propositional variable
+                   | Neg LogicFormula                 -- ¬ φ
+                   | LogicFormula :/\ LogicFormula    -- φ ∧ ψ
+                   | LogicFormula :\/ LogicFormula    -- φ ∨ ψ
+                   | LogicFormula :-> LogicFormula    -- φ → ψ
+                   | LogicFormula :<-> LogicFormula   -- φ ↔ ψ
+                   | Bottom                           -- ⊥
+                   | Top                              -- ⊤
                        deriving (Show, Eq)
 
-
--- test: (¬p∨q∨r)∧(¬p∨r)∧¬q
-
-
+-- TEST: (¬p∨q∨r)∧(¬p∨r)∧¬q
 -- toClause (Var 'p' :/\ Var 'q' :/\ (Var 'r' :\/ Var 'd'))
--- toClause (((Not (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Not (Var 'p')) :\/ Var 'r') :/\ (Not (Var 'q')))
+-- >>> toClause (((Not (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Not (Var 'p')) :\/ Var 'r') :/\ (Not (Var 'q')))
 -- [Var 'p',Var 'q',Var 'r' :\/ Var 'd']
 toClause :: LogicFormula -> [LogicFormula]
 toClause (clause1 :/\ clause2) = toClause clause1 ++ toClause clause2

@@ -1,7 +1,5 @@
-
 -- | Task 1 - construct truth tables for given formulas
-
-module TruthTable where
+module TruthTable () where
 
 import Data.List
 import Data.Maybe
@@ -47,10 +45,10 @@ truthTable :: LogicFormula -> Doc
 truthTable formula = text "The given formula is:\n" <+>
                      formulaExpre formula <+>
                      text "\nTruth table result:\n" <+>
-                     text (firstRow ++ intercalate "\n" [rowString formula status | status <- allPosStatus (uniqVars formula)] )
+                     text (firstRow ++ intercalate "\n" [rowString status | status <- allPosStatus (uniqVars formula)] )
   where
     firstRow = intercalate "\t" (map (\v -> [v]) (uniqVars formula)) ++ "\tResult\n"
-    rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
+    rowString status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
                                "\t" ++ showBool (calculator formula status)
 
 

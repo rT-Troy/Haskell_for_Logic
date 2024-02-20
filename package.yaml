@@ -22,6 +22,8 @@ description:         Please see the README on GitHub at <https://github.com/rT-T
 dependencies:
 - base >= 4.7 && < 5
 - split
+- ghc-prim
+- pretty
 
 ghc-options:
 - -Wall
@@ -45,6 +47,8 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    "$locals": -Wno-unused-top-binds
+    "$locals": -Wunused-top-binds
     dependencies:
     - logichaskell
 
@@ -58,3 +62,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - logichaskell
+
+haddock:
+  enable: true
+  dependencies: true
