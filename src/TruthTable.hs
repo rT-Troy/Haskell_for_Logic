@@ -1,4 +1,6 @@
+
 -- | Task 1 - construct truth tables for given formulas
+
 module TruthTable where
 
 import Data.List
@@ -109,4 +111,3 @@ formulaExpre (formula1 :-> formula2) = parens (formulaExpre formula1 <+>
                                          text "→" <+> formulaExpre formula2)
 formulaExpre (Bottom) = text "⊥"
 formulaExpre (Top) = text "⊤"
-
