@@ -1,24 +1,11 @@
-{-# OPTIONS_GHC -Wno-unused-top-binds #-}
-
 -- | Task 2 - Implementing CNF algorithm and DPLL algorithm using Haskell functions
-module CNF () where
+module CNF where
 --import Data.List.Split (splitOneOf)
 import Data.List
 
--- | define the boolvalue type
+import Common
 
-data BoolValue = T | F deriving (Show, Eq)
 
--- | Basic well-formed rules defination
-data LogicFormula = Var Char                          -- propositional variable
-                   | Neg LogicFormula                 -- ¬ φ
-                   | LogicFormula :/\ LogicFormula    -- φ ∧ ψ
-                   | LogicFormula :\/ LogicFormula    -- φ ∨ ψ
-                   | LogicFormula :-> LogicFormula    -- φ → ψ
-                   | LogicFormula :<-> LogicFormula   -- φ ↔ ψ
-                   | Bottom                           -- ⊥
-                   | Top                              -- ⊤
-                       deriving (Show, Eq)
 
 -- TEST: (¬p∨q∨r)∧(¬p∨r)∧¬q
 -- toClause (Var 'p' :/\ Var 'q' :/\ (Var 'r' :\/ Var 'd'))

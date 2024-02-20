@@ -26,7 +26,7 @@ source-repository head
 library
   exposed-modules:
       CNF
-      Lib
+      Common
       TruthTable
   other-modules:
       Paths_logichaskell
@@ -37,9 +37,9 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
-    , split
     , ghc-prim
     , pretty
+    , split
   default-language: Haskell2010
 
 executable logichaskell-exe
@@ -53,9 +53,10 @@ executable logichaskell-exe
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
-    , logichaskell
-    , split
     , ghc-prim
+    , logichaskell
+    , pretty
+    , split
   default-language: Haskell2010
 
 test-suite logichaskell-test
@@ -70,6 +71,8 @@ test-suite logichaskell-test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , ghc-prim
     , logichaskell
+    , pretty
     , split
   default-language: Haskell2010
