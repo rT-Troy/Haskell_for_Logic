@@ -39,14 +39,31 @@ step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
 step3 (Neg f) = Neg (step3 f)
 step3 (f1 :/\ f2) = (step3 f1) :/\ (step3 f2)
 step3 (f1 :\/ f2) = (step3 f1) :\/ (step3 f2)
-step3 (f1 :-> f2) = error "step1 has bug"
-step3 (f1 :<-> f2) = error "step1 has bug"
+step3 (_ :-> _) = error "step1 has bug"
+step3 (_ :<-> _) = error "step1 has bug"
 step3 Bottom = Bottom
 step3 Top = Top
 step3 f = f
 
-step4 :: LogicFormula -> LogicFormula
-step4 
+
+-- (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
+step4 :: [LogicFormula] -> LogicFormula
+step4 f = toClause f
+
+-- step41 ([Neg (Var 'q'),Var 'q',Var 'r'])
+step41 :: [LogicFormula] -> [LogicFormula]
+step41 [] = []
+step41 (x:xs)
+    | revneg x `elem` xs = step41 (filter (\y -> y /= x && y /= revneg x) xs)
+    | otherwise = x : step41 xs
+    where revneg :: LogicFormula -> LogicFormula
+          revneg (Neg l) = l
+          revneg l = Neg l
+
+
+-- getCNF ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+getCNF :: LogicFormula -> LogicFormula
+getCNF formula = step3 (step2 (step1 formula))
 
 -- TEST: (¬p∨q∨r)∧(¬p∨r)∧¬q
 -- toClause (Var 'p' :/\ Var 'q' :/\ (Var 'r' :\/ Var 'd'))
