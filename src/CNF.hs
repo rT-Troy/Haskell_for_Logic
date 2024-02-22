@@ -8,7 +8,7 @@ import Text.PrettyPrint
 import Common
 
 -- step1 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
--- step1 (Var 'q' :<-> (Var 'r' :<-> Var 'p'))
+-- Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
 step1 :: LogicFormula -> LogicFormula
 step1 (f1 :-> f2) = (step1 (Neg f1)) :\/ (step1 f2)
 step1 (f1 :<-> f2) = (step1 (step1 f1 :-> step1 f2)) :/\ (step1 (step1 f2 :-> step1 f1))
@@ -35,6 +35,7 @@ step2 f = f
 
 
 -- step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r'))
+-- (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 step3 :: LogicFormula -> LogicFormula
 step3 (x :\/ (y :/\ z)) = (step3 x :\/ step3 y) :/\ (step3 x :\/ step3 z)
 step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
@@ -51,40 +52,36 @@ step3 f = f
 -- (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 
 
--- step41 ([Neg (Var 'q'),Var 'q',Var 'r'])
-step41 :: [LogicFormula] -> [LogicFormula]
-step41 [] = []
-step41 (x:xs)
-    | revneg x `elem` xs = step41 (filter (\y -> y /= x && y /= revneg x) xs)
-    | otherwise = x : step41 xs
+-- step4elim ([Neg (Var 'q'),Var 'q',Var 'r'])
+step4elim :: [LogicFormula] -> [LogicFormula]
+step4elim [] = []
+step4elim (x:xs)
+    | revneg x `elem` xs = step4elim (filter (\y -> y /= x && y /= revneg x) xs)
+    | otherwise = x : step4elim xs
     where revneg :: LogicFormula -> LogicFormula
           revneg (Neg l) = l
           revneg l = Neg l
 
+-- cnf ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+cnf :: LogicFormula -> [[LogicFormula]]
+cnf f = step4 (step3 (step2 (step1 f)))
 
-step42 :: [[LogicFormula]] -> [[LogicFormula]]
-step42 [] = []
-step42 (x:xs) = step41 x : step42 xs
-
--- step4 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
-step4 :: LogicFormula -> [[LogicFormula]]
-step4 f = step45 (step42 (eachClause (toClause (step3 (step2 (step1 f))))))
-
--- step44 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']]
--- step44 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
+-- step4delsub [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']]
+-- step4delsub [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
 -- The occurrence of duplicate variables was considered
-step44 ::  [[LogicFormula]] -> [[LogicFormula]]
-step44 [] = []
-step44 (x:xs)
+step4delsub ::  [[LogicFormula]] -> [[LogicFormula]]
+step4delsub [] = []
+step4delsub (x:xs)
     | any (\b -> isSubsetOf b x && isSubsetOf x b) xs = error "should not have repeated variable"
-    | any (\b -> isSubsetOf x b) xs = step44 xs
-    | otherwise = x : step44 xs
+    | any (\b -> isSubsetOf x b) xs = step4delsub xs
+    | otherwise = x : step4delsub xs
     where isSubsetOf :: [LogicFormula] -> [LogicFormula] -> Bool
           isSubsetOf a b = all (\y -> y `elem` b) a
 
--- step45 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
-step45 :: [[LogicFormula]] -> [[LogicFormula]]
-step45 list = step44 (reverse (step44 list))
+-- step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r')))
+-- [[Neg (Var 'p'),Var 'q',Var 'r']]
+step4 :: LogicFormula -> [[LogicFormula]]
+step4 list = step4delsub (reverse (step4delsub (map step4elim (eachClause (toClause list)))))
 
 -- cnfPrint :: [[LogicFormula]] -> Doc
 
