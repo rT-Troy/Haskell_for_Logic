@@ -2,6 +2,8 @@
 module CNF where
 --import Data.List.Split (splitOneOf)
 import Data.List
+import Text.PrettyPrint
+
 
 import Common
 
@@ -27,8 +29,8 @@ step2 (Neg Top) = Bottom
 step2 (Neg f) = (Neg (step2 f))
 step2 (f1 :/\ f2) = (step2 f1 :/\ step2 f2)
 step2 (f1 :\/ f2) = (step2 f1 :\/ step2 f2)
-step2 (f1 :-> f2) = error "step1 has bug"
-step2 (f1 :<-> f2) = error "step1 has bug"
+step2 (_ :-> _) = error "step1 has bug"
+step2 (_ :<-> _) = error "step1 has bug"
 step2 f = f
 
 
@@ -47,8 +49,7 @@ step3 f = f
 
 
 -- (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
-step4 :: [LogicFormula] -> LogicFormula
-step4 f = toClause f
+
 
 -- step41 ([Neg (Var 'q'),Var 'q',Var 'r'])
 step41 :: [LogicFormula] -> [LogicFormula]
@@ -61,34 +62,54 @@ step41 (x:xs)
           revneg l = Neg l
 
 
--- getCNF ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
-getCNF :: LogicFormula -> LogicFormula
-getCNF formula = step3 (step2 (step1 formula))
+step42 :: [[LogicFormula]] -> [[LogicFormula]]
+step42 [] = []
+step42 (x:xs) = step41 x : step42 xs
+
+-- step4 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+step4 :: LogicFormula -> [[LogicFormula]]
+step4 f = step45 (step42 (eachClause (toClause (step3 (step2 (step1 f))))))
+
+-- step44 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']]
+-- step44 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
+-- The occurrence of duplicate variables was considered
+step44 ::  [[LogicFormula]] -> [[LogicFormula]]
+step44 [] = []
+step44 (x:xs)
+    | any (\b -> isSubsetOf b x && isSubsetOf x b) xs = error "should not have repeated variable"
+    | any (\b -> isSubsetOf x b) xs = step44 xs
+    | otherwise = x : step44 xs
+    where isSubsetOf :: [LogicFormula] -> [LogicFormula] -> Bool
+          isSubsetOf a b = all (\y -> y `elem` b) a
+
+-- step45 [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
+step45 :: [[LogicFormula]] -> [[LogicFormula]]
+step45 list = step44 (reverse (step44 list))
+
+-- cnfPrint :: [[LogicFormula]] -> Doc
+
+
 
 -- TEST: (¬p∨q∨r)∧(¬p∨r)∧¬q
--- toClause (Var 'p' :/\ Var 'q' :/\ (Var 'r' :\/ Var 'd'))
 -- toClause (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q')))
--- [Var 'p',Var 'q',Var 'r' :\/ Var 'd']
 toClause :: LogicFormula -> [LogicFormula]
 toClause (clause1 :/\ clause2) = toClause clause1 ++ toClause clause2
 toClause clause = [clause]
 
 
--- eachClause [Var 'p',Var 'q',Var 'r' :\/ Neg (Var 'd')]
 -- eachClause [(Neg (Var 'p') :\/ Var 'q') :\/ Var 'r',Neg (Var 'p') :\/ Var 'r',Neg (Var 'q')]
-eachClause :: [LogicFormula] -> [LogicFormula]
+eachClause :: [LogicFormula] -> [[LogicFormula]]
 eachClause [] = []
-eachClause (clause:clauses) = eachLiteral clause ++ eachClause clauses
+eachClause (clause:clauses) = [eachLiteral clause] ++ eachClause clauses
 
 
--- eachLiteral (Var 'r' :\/ Neg (Var 'd'))
 -- eachLiteral ((Neg (Var 'p') :\/ Var 'q') :\/ Var 'r')
 eachLiteral :: LogicFormula -> [LogicFormula]
 eachLiteral (literal1 :\/ literal2) = eachLiteral literal1 ++ eachLiteral literal2
 eachLiteral literal = [literal]
 
 
--- toLiteral (Var 'p' :/\ Var 'q' :/\ (Var 'r' :\/ Var 'd'))
+-- TODO: [LogicFormula]
 -- toLiteral (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q')))
-toLiteral :: LogicFormula -> [LogicFormula]
+toLiteral :: LogicFormula -> [[LogicFormula]]
 toLiteral formula = nub (eachClause (toClause formula))
