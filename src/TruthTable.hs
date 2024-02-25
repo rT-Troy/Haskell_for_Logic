@@ -9,10 +9,6 @@ import Text.PrettyPrint
 import Common
 
 
-
-
-
-
 -- | main function
 -- TEST:
 -- truthTable ((Var 'q') :/\ (Var 'r'))
@@ -78,27 +74,8 @@ calculator (Neg formula) status = if calculator formula status == T then F else 
 calculator (formula1 :/\ formula2) status = if calculator formula1 status == T && calculator formula2 status == T then T else F
 calculator (formula1 :\/ formula2) status = if calculator formula1 status == F && calculator formula2 status == F then F else T
 calculator (formula1 :-> formula2) status = if calculator formula1 status == T && calculator formula2 status == F then F else T
---TODO: :<->
+calculator (formula1 :<-> formula2) status = error "The formula is invalid."
 calculator Bottom _ = F
 calculator Top _ = T
 
 
--- | show value of Bool type to String
-showBool :: BoolValue -> String
-showBool T = "T"
-showBool F = "F"
-
--- | Formula Print out in logic representation
-formulaExpre :: LogicFormula -> Doc
-formulaExpre (Var v) = text [v]
-formulaExpre (Neg v) = parens (text "¬" <+> formulaExpre v)
-formulaExpre (formula1 :/\ formula2) = parens (formulaExpre formula1 <+>
-                                         text "∧" <+> formulaExpre formula2)
-formulaExpre (formula1 :\/ formula2) = parens (formulaExpre formula1 <+>
-                                         text "∨" <+> formulaExpre formula2)
-formulaExpre (formula1 :-> formula2) = parens (formulaExpre formula1 <+>
-                                         text "→" <+> formulaExpre formula2)
-formulaExpre (formula1 :<-> formula2) = parens (formulaExpre formula1 <+>
-                                         text "↔" <+> formulaExpre formula2)
-formulaExpre (Bottom) = text "⊥"
-formulaExpre (Top) = text "⊤"

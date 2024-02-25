@@ -62,9 +62,26 @@ step4elim (x:xs)
           revneg (Neg l) = l
           revneg l = Neg l
 
--- cnf ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
-cnf :: LogicFormula -> [[LogicFormula]]
-cnf f = step4 (step3 (step2 (step1 f)))
+-- cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+cnfAlgo :: LogicFormula -> [[LogicFormula]]
+cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
+
+-- cnfPrint ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) [[]]
+cnfPrint :: LogicFormula -> Doc
+cnfPrint formula  = text "The given formula is:\n" <+>
+                           formulaExpre formula <+>
+                           text "\n\nThe clause set is:\n" <+>
+                           text "{" <+> clausesPrint (cnfAlgo formula) <+> text "}"
+                   
+clausesPrint :: [[LogicFormula]] -> Doc
+clausesPrint [] = text ""
+clausesPrint [x] = text "{" <+> literalPrint x <+> text "}"
+clausesPrint (x:xs) = text "{" <+> literalPrint x <+> text "}, " <+> clausesPrint xs
+
+literalPrint :: [LogicFormula] -> Doc
+literalPrint [] = text ""
+literalPrint [x] = formulaExpre x
+literalPrint (x:xs) = formulaExpre x <+> text "," <+> literalPrint xs
 
 -- step4delsub [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']]
 -- step4delsub [[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r'],[Var 'r'],[Var 'q', Var 'r']]
