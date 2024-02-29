@@ -24,6 +24,11 @@ dependencies:
 - split
 - ghc-prim
 - pretty
+- hspec
+- haddock
+- QuickCheck
+- hlint
+- doctest
 
 ghc-options:
 - -Wall

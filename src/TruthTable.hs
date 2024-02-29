@@ -9,23 +9,8 @@ import Text.PrettyPrint
 import Common
 
 
--- | main function
--- TEST:
--- truthTable ((Var 'q') :/\ (Var 'r'))
--- >>> formula = (Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r'))
--- >>> truthTable formula
--- The given formula is:
---  ((p → (q → r)) → ((p → q) → (p → r))) 
--- Truth table result:
---  p	q	r	Result
--- T	T	T	T
--- T	T	F	T
--- T	F	T	T
--- T	F	F	T
--- F	T	T	T
--- F	T	F	T
--- F	F	T	T
--- F	F	F	T
+-- | Generate a pretty truth table of a given formula
+-- truthTable ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
 truthTable :: LogicFormula -> Doc
 truthTable formula = text "The given formula is:\n" <+>
                      formulaExpre formula <+>
@@ -38,10 +23,7 @@ truthTable formula = text "The given formula is:\n" <+>
 
 
 -- | Get all non-repeating propositional variables from a given formula
--- TEST:
--- >>> uniqVars (Var 'p' :\/ Var 'q')
 -- >>> uniqVars (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r')))
--- "pq"
 -- "pdqr"
 uniqVars :: LogicFormula -> [Char]
 uniqVars (Var v) = [v]      -- get propositional variable
@@ -55,19 +37,17 @@ uniqVars Top = []
 
 
 -- | Generate a nested list of all possible variable assignments
--- TEST:
--- >>> variables = "pd"
--- >>> allPosStatus (variables)
+-- >>> allPosStatus "pd"
+-- [[('p',T),('d',T)],[('p',T),('d',F)],[('p',F),('d',T)],[('p',F),('d',F)]]
 allPosStatus :: [Char] -> [[(Char, BoolValue)]]
 allPosStatus [] = [[]]
 allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | status <- rest]
   where rest = allPosStatus vs
 
 
--- | calculate the bool value of given formula and case status
--- TEST:
--- >>> arg = (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
--- >>> calculator arg
+-- | Calculate the bool value of given formula and case status
+-- >>> calculator (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
+-- T
 calculator :: LogicFormula -> [(Char, BoolValue)] -> BoolValue
 calculator (Var v) status = fromMaybe (error ("Variable " ++ [v] ++ " Neg found in environment")) (lookup v status)
 calculator (Neg formula) status = if calculator formula status == T then F else T
