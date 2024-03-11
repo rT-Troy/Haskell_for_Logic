@@ -1,5 +1,15 @@
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
--- | Task 1 - construct truth tables for given formulas
+{-|
+Module      : TruthTable
+Description : Construct a truth table for a given formula
+Copyright   : 2024 Jun Zhang
+License     : BSD-style (see LICENSE)
+Maintainer  : yotroy@foxmail.com
+Stability   : experimental
+Portability : haskell 2010
+
+Here is a longer description of this module, containing some
+commentary with @some markup@.
+-}
 module TruthTable where
 
 import Data.List
@@ -9,8 +19,22 @@ import Text.PrettyPrint
 import Common
 
 
--- | Generate a pretty truth table of a given formula
--- truthTable ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
+-- | Main function: Generate a pretty truth table of a given formula
+-- Example:
+-- 
+-- > $ truthTable ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
+-- > The given formula is:
+-- > ((p → (q → r)) → ((p → q) → (p → r))) 
+-- > Truth table result:
+-- > p      q       r       Result
+-- > T       T       T       T
+-- > T       T       F       T
+-- > T       F       T       T
+-- > T       F       F       T
+-- > F       T       T       T
+-- > F       T       F       T
+-- > F       F       T       T
+-- > F       F       F       T
 truthTable :: LogicFormula -> Doc
 truthTable formula = text "The given formula is:\n" <+>
                      formulaExpre formula <+>
@@ -22,9 +46,12 @@ truthTable formula = text "The given formula is:\n" <+>
                                "\t" ++ showBool (calculator formula status)
 
 
--- | Get all non-repeating propositional variables from a given formula
--- >>> uniqVars (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r')))
--- "pdqr"
+-- | Get all non-repeating propositional variables from a given formula.
+-- Example:
+-- 
+-- > $ uniqVars (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r')))
+-- > "pdqr"
+
 uniqVars :: LogicFormula -> [Char]
 uniqVars (Var v) = [v]      -- get propositional variable
 uniqVars (Neg formula) = uniqVars formula
@@ -37,8 +64,11 @@ uniqVars Top = []
 
 
 -- | Generate a nested list of all possible variable assignments
--- >>> allPosStatus "pd"
--- [[('p',T),('d',T)],[('p',T),('d',F)],[('p',F),('d',T)],[('p',F),('d',F)]]
+-- Example: 
+-- 
+-- > $ allPosStatus "pd"
+-- > [[('p',T),('d',T)],[('p',T),('d',F)],[('p',F),('d',T)],[('p',F),('d',F)]]
+
 allPosStatus :: [Char] -> [[(Char, BoolValue)]]
 allPosStatus [] = [[]]
 allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | status <- rest]
@@ -46,15 +76,17 @@ allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | statu
 
 
 -- | Calculate the bool value of given formula and case status
--- >>> calculator (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
--- T
+-- Example:
+-- 
+-- > $ calculator (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
+-- > T
 calculator :: LogicFormula -> [(Char, BoolValue)] -> BoolValue
 calculator (Var v) status = fromMaybe (error ("Variable " ++ [v] ++ " Neg found in environment")) (lookup v status)
 calculator (Neg formula) status = if calculator formula status == T then F else T
 calculator (formula1 :/\ formula2) status = if calculator formula1 status == T && calculator formula2 status == T then T else F
 calculator (formula1 :\/ formula2) status = if calculator formula1 status == F && calculator formula2 status == F then F else T
 calculator (formula1 :-> formula2) status = if calculator formula1 status == T && calculator formula2 status == F then F else T
-calculator (formula1 :<-> formula2) status = error "The formula is invalid."
+calculator (_ :<-> _) _ = error "The formula is invalid."
 calculator Bottom _ = F
 calculator Top _ = T
 
