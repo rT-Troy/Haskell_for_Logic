@@ -27,6 +27,7 @@ library
   exposed-modules:
       CNF
       Common
+      DPLL
       PropResolution
       TruthTable
   other-modules:
