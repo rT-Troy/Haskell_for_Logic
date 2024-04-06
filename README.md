@@ -15,3 +15,9 @@ doctest -isrc src/TruthTable.hs
 
 doctest -isrc src/Common.hs
 ```
+
+### Documentation
+
+```
+stack haddock
+```
