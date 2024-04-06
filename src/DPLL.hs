@@ -17,12 +17,12 @@ import Data.List
 import Common
 import CNF
 
--- | If T means CNF formula is valid, if F means invalid.
+-- | If T means CNF formula is invalid, if F means valid.
 --
 -- Example:
 --
 -- > $ dpllResult (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > F
+-- > T
 dpllResult :: LogicFormula -> BoolValue
 dpllResult formula
         | lenResult >= 1 = T
@@ -36,11 +36,12 @@ dpllResult formula
 -- Example:
 --
 -- > $ dpllAlgo (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > []
+-- > [[Neg (Var 'r')]]
 dpllAlgo :: LogicFormula -> [[LogicFormula]]
 dpllAlgo formula 
-        | length (head clauses) == 1 = unitEachClause clauses
-        | otherwise = splitClauses clauses
+        | length (head clauses) == 1 = unitClause clauses
+        | unitClause clauses == unitNegClause clauses = unitClause clauses
+        | otherwise = unitClause clauses ++ unitNegClause clauses
         where clauses = calClause formula
 
 
@@ -58,23 +59,29 @@ calClause formula = sortOn length (eachClause (toClause (step2 (step1 formula)))
 --
 -- Example:
 --
--- > $ unitEachClause ([[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]])
+-- > $ unitClause ([[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]])
+-- > [[Neg (Var 'r')]]
+-- >
+-- > $ unitClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
+-- > [[]]
+unitClause :: [[LogicFormula]] -> [[LogicFormula]]
+unitClause [] = [[]]
+unitClause (x:xs) 
+        | null xs = [x]
+        | otherwise = unitClause (sortOn length (eliminate (head x) xs))
+
+
+-- | Splitting in case no unit clause exists, the literal should be negated
+--
+-- Example:
+--
+-- > $ unitNegClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > []
-unitEachClause :: [[LogicFormula]] -> [[LogicFormula]]
-unitEachClause [] = []
-unitEachClause clauses@(x:xs)
-        | length x == 1 = unitEachClause (sortOn length (eliminate (head x) xs))
-        | otherwise = clauses
-
-
-splitClause :: [[LogicFormula]] -> [[LogicFormula]]
-splitClause [] = []
-splitClause (x:xs) = splitClause (sortOn length (eliminate (head x) xs))
-
-
-negSplitClause :: [[LogicFormula]] -> [[LogicFormula]]
-negSplitClause [] = []
-negSplitClause (x:xs) = splitClause (sortOn length (eliminate (revneg (head x)) xs))
+unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
+unitNegClause [] = [[]]
+unitNegClause (x:xs) 
+        | null xs = [x]
+        | otherwise = unitNegClause (sortOn length (eliminate (revneg (head x)) xs))
         where revneg :: LogicFormula -> LogicFormula
               revneg (Neg l) = l
               revneg l = Neg l
@@ -88,6 +95,15 @@ checkClause result
 
 -- | Eliminate all clauses containing specific literal (x),
 --  and eliminate all negation of x from all clauses
+--
+-- Example:
+-- 
+-- > $ eliminate (Neg (Var 'p')) ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'p',Var 'r']])
+-- > [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']]
+-- > $ eliminate (Var 'r') [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']]
+-- > [[Var 'q'],[Neg (Var 'q')]]
+-- > $ eliminate (Neg (Var 'q')) [[Var 'q'],[Neg (Var 'q')]]
+-- > [[]]
 eliminate :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
 eliminate _ [] = []
 eliminate x (y:ys)
