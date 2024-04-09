@@ -92,12 +92,9 @@ main = hspec $ do
         it "toClauses" $ do
             -- week 6 lecture
             toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe` [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
-        it "dpllResult" $ do
-            -- week 6 lecture
-            dpllResult (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe` T
         it "dpllFormula" $ do
             -- week 6 lecture
-            dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) 
+            dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
                 `shouldBe` [[Neg (Var 'r')]]
         it "dpllClauseSets" $ do
             -- week 7 exercise question 7.1.a

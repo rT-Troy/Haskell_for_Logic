@@ -24,17 +24,18 @@ import Text.PrettyPrint
 --
 -- Example:
 --
--- > $ dpllResult (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > T
-dpllResult :: [[LogicFormula]] -> Doc
-dpllResult clauseSet
+-- > $ dpllResultPrint [[Neg (Var 'r')]]
+-- > "It yields Ø, which is satisfiable."
+dpllResultPrint :: [[LogicFormula]] -> Doc
+dpllResultPrint clauseSet
         | not (null clauseSet) = text "It yields Ø, which is satisfiable."
         | null clauseSet = text "It yields empty clause □, which is unsatisfiable."
         | otherwise = error "DPLL result error"
 
 
--- | Main function 1: Apply DPLL algorithm to a CNF formula
--- DPLL resuiting empty [] means unsatisfiable, otherwise satisfiable
+-- | Apply DPLL algorithm to a CNF formula
+-- Check if the formula is not valid, its negation should be satisfiable.
+-- DPLL resuiting empty [] which means unsatisfiable, otherwise satisfiable.
 --
 -- Example:
 --
@@ -48,6 +49,9 @@ dpllFormula formula
         where clauses = toClauses formula
 
 -- | Print out the result of DPLL algorithm to a CNF formula
+-- Check if the formula is not valid, its negation should be satisfiable.
+-- DPLL resuiting empty [] which means unsatisfiable, otherwise satisfiable.
+--
 -- Example:
 --
 -- > $ dpllFormulaPrint (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
@@ -66,7 +70,7 @@ dpllFormulaPrint formula =      text "Applying DPLL algorithm to a CNF formula..
                                 text "The answer is: \n" <+>
                                 clausesPrint (dpllFormula formula) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResult (dpllFormula formula)
+                                dpllResultPrint (dpllFormula formula)
 
 
 -- | Print out the result of DPLL algorithm to clause sets
@@ -85,7 +89,7 @@ dpllClausesPrint clauses =      text "The clause set is: \n" <+>
                                 text "The answer is: \n" <+>
                                 clausesPrint (dpllClauseSets clauses) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResult (dpllClauseSets clauses)
+                                dpllResultPrint (dpllClauseSets clauses)
 
 
 
@@ -126,8 +130,27 @@ toClauses formula = sortOn length (eachClause (toClause (step2 (step1 formula)))
 unitClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitClause [] = [[]]
 unitClause clauses@(x:xs) 
-        | null xs = [x]
+        | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
         | otherwise = unitClause (sortOn length (eliminate (head x) clauses))
+
+-- | Non-splitting elimination of each clause if exists a unit clause
+--
+-- Example:
+--
+-- > $ unitClausePrint [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+-- > [[Neg (Var 'r')]]
+-- >
+-- > $ unitClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
+-- > [[]]
+unitClausePrint :: [[LogicFormula]] -> Doc
+unitClausePrint [] = text ""
+unitClausePrint clauses@(x:xs)
+        | null x =      text "\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | null xs =text "\nUse unit" <+> clausesPrint [x] <+> text ": \nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | otherwise =   text "\nUse unit" <+> clausesPrint [x] <+> text ": \n" <+>
+                        clausesPrint sortedClauses <+>
+                        unitClausePrint sortedClauses
+                where sortedClauses = sortOn length (eliminate (head x) clauses)
 
 
 -- | Splitting in case no unit clause exists, the literal should be negated
@@ -139,23 +162,33 @@ unitClause clauses@(x:xs)
 unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitNegClause [] = [[]]
 unitNegClause clauses@(x:xs) 
-        | null xs = [x]
+        | null xs = [x]    -- ^ The case of clause set Ø
         | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
 
 
+-- | Splitting in case no unit clause exists, the literal should be negated
+--
+-- Example:
+--
+-- > $ unitNegClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
+-- > [[]]
+unitNegClausePrint :: [[LogicFormula]] -> Doc
+unitNegClausePrint [] = text ""
+unitNegClausePrint clauses@(x:xs)
+        | null x =      text "\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | null xs =text "\nUse unit" <+> clausesPrint [x] <+> text ": \nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | otherwise =   text "\nUse unit" <+> clausesPrint [x] <+> text ": \n" <+>
+                        clausesPrint sortedClauses <+>
+                        unitNegClausePrint sortedClauses
+                where sortedClauses = sortOn length (eliminate (revNeg (head x)) clauses)
 
--- | Check if the clause is valid, if it is, return True, otherwise False
-checkClause :: [[LogicFormula]] -> Bool
-checkClause result
-        | length result == 1 = True      -- ^ ⊤: empty clause set Ø, which means satisfiable
-        | otherwise = False              -- ^ ⊥: empty clause □, which means unsatisfiable
 
 -- | Eliminate all clauses containing specific literal (x),
 --  and eliminate all negation of x from all clauses
 --
 -- Example:
 -- 
--- > $ eliminate (Neg (Var 'p')) ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'p',Var 'r']])
+-- > $ eliminate (Neg (Var 'p')) ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'p',Var 'r']]) []
 -- > [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']]
 -- > $ eliminate (Var 'r') [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']]
 -- > [[Var 'q'],[Neg (Var 'q')]]
