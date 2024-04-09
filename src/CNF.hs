@@ -76,11 +76,9 @@ step3 f = f
 step4elim :: [LogicFormula] -> [LogicFormula]
 step4elim [] = []
 step4elim (x:xs)
-    | revneg x `elem` xs = step4elim (filter (\y -> y /= x && y /= revneg x) xs)
+    | revNeg x `elem` xs = step4elim (filter (\y -> y /= x && y /= revNeg x) xs)
     | otherwise = x : step4elim xs
-    where revneg :: LogicFormula -> LogicFormula
-          revneg (Neg l) = l
-          revneg l = Neg l
+
 
 -- | CNF call function
 -- Example:

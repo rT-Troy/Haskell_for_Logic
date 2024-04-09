@@ -1,9 +1,9 @@
 import Test.Hspec
 
-import CNF
+import Common
 import TruthTable
 import PropResolution
-import Common
+import CNF
 import DPLL
 
 main :: IO ()
@@ -89,6 +89,34 @@ main = hspec $ do
             propResol [Var 'p'] [Neg (Var 'p')] `shouldBe` []
 
     describe "DPLL" $ do
-        it "calClause" $ do
+        it "toClauses" $ do
             -- week 6 lecture
-            calClause (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe` [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+            toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe` [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+        it "dpllResult" $ do
+            -- week 6 lecture
+            dpllResult (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe` T
+        it "dpllFormula" $ do
+            -- week 6 lecture
+            dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) 
+                `shouldBe` [[Neg (Var 'r')]]
+        it "dpllClauseSets" $ do
+            -- week 7 exercise question 7.1.a
+            dpllClauseSets [[Var 'p',Var 'q'],[Neg (Var 'p'),Var 'q'],[Var 'p',Neg (Var 'q')],[Neg (Var 'p'),Neg (Var 'q')]] `shouldBe` [[]]
+            -- week 7 exercise question 7.1.b
+            dpllClauseSets [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
+                `shouldBe` [[]]
+        it "unitClause" $ do
+            -- week 6 lecture
+            unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]] `shouldBe` [[Neg (Var 'r')]]
+        it "unitNegClause" $ do
+            -- week 6 lecture
+            unitNegClause [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']] `shouldBe` [[]]
+        it "eliminate: week 6 lecture" $ do
+            -- week 6 lecture
+            eliminate (Neg (Var 'p')) [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'p',Var 'r']] `shouldBe` [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']]
+            -- week 6 lecture
+            eliminate (Var 'r') [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']] `shouldBe` [[Var 'q'],[Neg (Var 'q')]]
+            -- week 6 lecture
+            eliminate (Neg (Var 'q')) [[Var 'q'],[Neg (Var 'q')]] `shouldBe` [[]]
+
+        

@@ -16,6 +16,7 @@ import Data.List
 
 import Common
 import CNF
+import Text.PrettyPrint
 
 -- | If T means CNF formula is invalid, if F means valid.
 --
@@ -28,47 +29,66 @@ dpllResult formula
         | lenResult >= 1 = T
         | lenResult == 0 = F 
         | otherwise = error "DPLL result error"
-        where lenResult = length (dpllAlgo formula)
+        where lenResult = length (dpllFormula formula)
 
 
--- | Main function: DPLL resuiting empty [] means unsatisfiable, otherwise satisfiable
+-- | Main function 1: Apply DPLL algorithm to a CNF formula
+-- DPLL resuiting empty [] means unsatisfiable, otherwise satisfiable
 --
 -- Example:
 --
--- > $ dpllAlgo (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > $ dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > [[Neg (Var 'r')]]
-dpllAlgo :: LogicFormula -> [[LogicFormula]]
-dpllAlgo formula 
+dpllFormula :: LogicFormula -> [[LogicFormula]]
+dpllFormula formula 
         | length (head clauses) == 1 = unitClause clauses
         | unitClause clauses == unitNegClause clauses = unitClause clauses
         | otherwise = unitClause clauses ++ unitNegClause clauses
-        where clauses = calClause formula
+        where clauses = toClauses formula
+
+
+-- dpllClauseSetsPrint :: [[LogicFormula]] -> Doc
+
+
+-- | Main function 2: Apply DPLL algorithm to clause sets
+-- DPLL resuiting empty [] means unsatisfiable, otherwise satisfiable
+--
+-- Example:
+--
+-- > $ dpllClauseSets (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > [[Neg (Var 'r')]]
+dpllClauseSets :: [[LogicFormula]] -> [[LogicFormula]]
+dpllClauseSets clauseSet 
+        | length (head clauses) == 1 = unitClause clauses
+        | unitClause clauses == unitNegClause clauses = unitClause clauses
+        | otherwise = unitClause clauses ++ unitNegClause clauses
+        where clauses = sortOn length clauseSet
 
 
 -- | Convert a CNF formula to a clause set
 --
 -- Example:
 --
--- > $ calClause (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
-calClause :: LogicFormula -> [[LogicFormula]]
-calClause formula = sortOn length (eachClause (toClause (step2 (step1 formula))))       -- ^ sortOn: make the shortest clause in the front
+toClauses :: LogicFormula -> [[LogicFormula]]
+toClauses formula = sortOn length (eachClause (toClause (step2 (step1 formula))))       -- ^ sortOn: make the shortest clause in the front
 
 
 -- | Non-splitting elimination of each clause if exists a unit clause
 --
 -- Example:
 --
--- > $ unitClause ([[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]])
+-- > $ unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 -- > [[Neg (Var 'r')]]
 -- >
 -- > $ unitClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > [[]]
 unitClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitClause [] = [[]]
-unitClause (x:xs) 
+unitClause clauses@(x:xs) 
         | null xs = [x]
-        | otherwise = unitClause (sortOn length (eliminate (head x) xs))
+        | otherwise = unitClause (sortOn length (eliminate (head x) clauses))
 
 
 -- | Splitting in case no unit clause exists, the literal should be negated
@@ -76,15 +96,13 @@ unitClause (x:xs)
 -- Example:
 --
 -- > $ unitNegClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
--- > []
+-- > [[]]
 unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitNegClause [] = [[]]
-unitNegClause (x:xs) 
+unitNegClause clauses@(x:xs) 
         | null xs = [x]
-        | otherwise = unitNegClause (sortOn length (eliminate (revneg (head x)) xs))
-        where revneg :: LogicFormula -> LogicFormula
-              revneg (Neg l) = l
-              revneg l = Neg l
+        | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
+
 
 
 -- | Check if the clause is valid, if it is, return True, otherwise False
@@ -108,8 +126,5 @@ eliminate :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
 eliminate _ [] = []
 eliminate x (y:ys)
         | x `elem` y = eliminate x ys   -- ^ x: the specific literal, y: the clause
-        | revneg x `elem` y = filter (\z -> z /= x && z /= revneg x) y : eliminate x ys
+        | revNeg x `elem` y = filter (\z -> z /= x && z /= revNeg x) y : eliminate x ys
         | otherwise = y : eliminate x ys
-        where revneg :: LogicFormula -> LogicFormula
-              revneg (Neg l) = l
-              revneg l = Neg l

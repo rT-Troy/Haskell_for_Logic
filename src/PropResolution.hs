@@ -27,8 +27,5 @@ propResol clause1 clause2 = propSolve (clause1 ++ clause2)
 propSolve :: [LogicFormula] -> [LogicFormula]
 propSolve [] = []
 propSolve (x:xs)
-    | revneg x `elem` xs || x `elem` xs = propSolve (filter (\y -> y /= x && y /= revneg x) xs)
+    | revNeg x `elem` xs || x `elem` xs = propSolve (filter (\y -> y /= x && y /= revNeg x) xs)
     | otherwise = x : propSolve xs
-    where revneg :: LogicFormula -> LogicFormula
-          revneg (Neg l) = l
-          revneg l = Neg l

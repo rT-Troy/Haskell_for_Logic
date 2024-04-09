@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-|
 Module      : Common
 Description : Common definitions for the project
@@ -19,8 +20,8 @@ data BoolValue = T | F deriving (Show, Eq)
 
 
 -- | Basic well-formed rules definition
-data LogicFormula = Var Char                          -- ^ propositional variable
-                   | Neg LogicFormula                 -- ^ ¬ φ
+data LogicFormula = Var Char                          -- ^ propositional variable 
+                   | Neg LogicFormula                 -- ^ ¬ φ : negation    Neg (Var 'p')
                    | LogicFormula :/\ LogicFormula    -- ^ φ ∧ ψ
                    | LogicFormula :\/ LogicFormula    -- ^ φ ∨ ψ
                    | LogicFormula :-> LogicFormula    -- ^ φ → ψ
@@ -54,3 +55,7 @@ formulaExpre (formula1 :<-> formula2) = parens (formulaExpre formula1 <+>
 formulaExpre (Bottom) = text "⊥"
 formulaExpre (Top) = text "⊤"
 
+-- | Definition of the negation for basic rules
+revNeg :: LogicFormula -> LogicFormula
+revNeg (Neg l) = l
+revNeg l = Neg l
