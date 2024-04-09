@@ -59,3 +59,15 @@ formulaExpre (Top) = text "⊤"
 revNeg :: LogicFormula -> LogicFormula
 revNeg (Neg l) = l
 revNeg l = Neg l
+
+
+clausesPrint :: [[LogicFormula]] -> Doc
+clausesPrint [] = text ""
+clausesPrint [x] = text "{" <+> literalPrint x <+> text "}"
+clausesPrint (x:xs) = text "{" <+> literalPrint x <+> text "}, " <+> clausesPrint xs
+
+
+literalPrint :: [LogicFormula] -> Doc
+literalPrint [] = text "[]"
+literalPrint [x] = formulaExpre x
+literalPrint (x:xs) = formulaExpre x <+> text "," <+> literalPrint xs

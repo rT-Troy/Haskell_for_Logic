@@ -18,18 +18,19 @@ import Common
 import CNF
 import Text.PrettyPrint
 
--- | If T means CNF formula is invalid, if F means valid.
+-- | Check if the clause sets is satisfiable, and print out the result.
+-- | If it is valid, it yields Ø, which is satisfiable.
+-- | If it is invalid, it yields empty clause □, which is unsatisfiable.
 --
 -- Example:
 --
 -- > $ dpllResult (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > T
-dpllResult :: LogicFormula -> BoolValue
-dpllResult formula
-        | lenResult >= 1 = T
-        | lenResult == 0 = F 
+dpllResult :: [[LogicFormula]] -> Doc
+dpllResult clauseSet
+        | not (null clauseSet) = text "It yields Ø, which is satisfiable."
+        | null clauseSet = text "It yields empty clause □, which is unsatisfiable."
         | otherwise = error "DPLL result error"
-        where lenResult = length (dpllFormula formula)
 
 
 -- | Main function 1: Apply DPLL algorithm to a CNF formula
@@ -46,8 +47,46 @@ dpllFormula formula
         | otherwise = unitClause clauses ++ unitNegClause clauses
         where clauses = toClauses formula
 
+-- | Print out the result of DPLL algorithm to a CNF formula
+-- Example:
+--
+-- > $ dpllFormulaPrint (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > The given formula is:
+-- >  (¬ ((p ∧ q) → (q ∧ r)))
+-- > 
+-- > The clause set is:
+-- >  { { p },  { q },  { (¬ q) , (¬ r) } }
+dpllFormulaPrint :: LogicFormula -> Doc
+dpllFormulaPrint formula =      text "Applying DPLL algorithm to a CNF formula...\n\n" <+>
+                                text "The given formula is: \n" <+>
+                                formulaExpre formula <+>
+                                text "\n\n The clause set is: \n" <+>
+                                text "{" <+> clausesPrint (toClauses formula) <+> text "}\n\n" <+>
+                                text "Applying DPLL algorithm to the clause set...\n\n" <+>
+                                text "The answer is: \n" <+>
+                                clausesPrint (dpllFormula formula) <+>
+                                text "\n\n The result is: \n" <+>
+                                dpllResult (dpllFormula formula)
 
--- dpllClauseSetsPrint :: [[LogicFormula]] -> Doc
+
+-- | Print out the result of DPLL algorithm to clause sets
+-- Example:
+--
+-- > $ dpllClausesPrint [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
+-- > The given formula is:
+-- >  (¬ ((p ∧ q) → (q ∧ r)))
+-- > 
+-- > The clause set is:
+-- >  { { p },  { q },  { (¬ q) , (¬ r) } }
+dpllClausesPrint :: [[LogicFormula]] -> Doc
+dpllClausesPrint clauses =      text "The clause set is: \n" <+>
+                                text "{" <+> clausesPrint clauses <+> text "}\n\n" <+>
+                                text "Applying DPLL algorithm to the clause set...\n\n" <+>
+                                text "The answer is: \n" <+>
+                                clausesPrint (dpllClauseSets clauses) <+>
+                                text "\n\n The result is: \n" <+>
+                                dpllResult (dpllClauseSets clauses)
+
 
 
 -- | Main function 2: Apply DPLL algorithm to clause sets

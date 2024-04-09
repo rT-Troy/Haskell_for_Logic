@@ -105,18 +105,6 @@ cnfPrint formula  = text "The given formula is:\n" <+>
                            text "{" <+> clausesPrint (cnfAlgo formula) <+> text "}"
 
 
-clausesPrint :: [[LogicFormula]] -> Doc
-clausesPrint [] = text ""
-clausesPrint [x] = text "{" <+> literalPrint x <+> text "}"
-clausesPrint (x:xs) = text "{" <+> literalPrint x <+> text "}, " <+> clausesPrint xs
-
-
-literalPrint :: [LogicFormula] -> Doc
-literalPrint [] = text ""
-literalPrint [x] = formulaExpre x
-literalPrint (x:xs) = formulaExpre x <+> text "," <+> literalPrint xs
-
-
 -- | The occurrence of duplicate variables was considered
 -- Example:
 --
