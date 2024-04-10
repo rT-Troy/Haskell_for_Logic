@@ -99,10 +99,21 @@ cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
 -- > The clause set is:
 -- >  { { (¬ p) , q , r } }
 cnfPrint :: LogicFormula -> Doc
-cnfPrint formula  = text "The given formula is:\n" <+>
-                           formulaExpre formula <+>
-                           text "\n\nThe clause set is:\n" <+>
-                           text "{" <+> clausesPrint (cnfAlgo formula) <+> text "}"
+cnfPrint formula  = text "\nApply CNF algorithm to formula" <+>
+                    text "The given formula is:\n" <+>
+                    formulaExpre formula <+>
+                    text "\n\nStep 1:\n" <+>
+                    formulaExpre afterStep1 <+>
+                    text "\n\nStep 2:\n" <+>
+                    formulaExpre afterStep2 <+>
+                    text "\n\nStep 3:\n" <+>
+                    formulaExpre afterStep3 <+>
+                    text "\n\nStep 4, the clause set is:\n" <+>
+                    text "{" <+> clausesPrint afterStep4 <+> text "}"
+                where afterStep1 = step1 formula
+                      afterStep2 = step2 afterStep1
+                      afterStep3 = step3 afterStep2
+                      afterStep4 = step4 afterStep3
 
 
 -- | The occurrence of duplicate variables was considered

@@ -89,5 +89,3 @@ calculator (formula1 :-> formula2) status = if calculator formula1 status == T &
 calculator (_ :<-> _) _ = error "The formula is invalid."
 calculator Bottom _ = F
 calculator Top _ = T
-
-

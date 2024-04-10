@@ -14,7 +14,20 @@ module PropResolution where
 
 import Common
 
--- | Main function: Implementing propositional resolution.
+
+-- | Implementing propositional resolution to clause sets.
+--
+-- Example:
+--
+-- > $ resolClauses [[Var 'p',Var 'q'],[Var 'p',Neg (Var 'q')],[Neg (Var 'p'),Var 'q'],[Neg (Var 'p'),Neg (Var 'q')]]
+-- > [Var 'p',Var 'q',Neg (Var 's')]
+resolClauses :: [[LogicFormula]] -> [LogicFormula]
+resolClauses [] = []
+resolClauses (x:xs) = propResol x (resolClauses xs)
+
+-- | Implementing propositional resolution rule.
+-- It takes 2 clauses as input, combines them and eliminates the tautological literals in @propSolve@.
+--
 -- Example:
 --
 -- > $ propResol [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r']
@@ -23,7 +36,12 @@ propResol :: [LogicFormula] -> [LogicFormula] -> [LogicFormula]
 propResol clause1 clause2 = propSolve (clause1 ++ clause2)
 
 
--- | eliminating the tautological literals in a combined literal list of 2 clauses.
+-- | Eliminating the tautological literals in a combined literal list of 2 clauses.
+--
+-- Example:
+--
+-- > $ propSolve [Var 'p', Var 'q', Neg (Var 'r'), Neg (Var 's'), Var 'r']
+-- > [Var 'p',Var 'q',Neg (Var 's')]
 propSolve :: [LogicFormula] -> [LogicFormula]
 propSolve [] = []
 propSolve (x:xs)
