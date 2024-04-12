@@ -55,22 +55,46 @@ dpllFormula formula
 -- Example:
 --
 -- > $ dpllFormulaPrint (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > The given formula is:
--- >  (¬ ((p ∧ q) → (q ∧ r)))
+-- > ===Applying DPLL algorithm to a CNF formula===
 -- > 
--- > The clause set is:
--- >  { { p },  { q },  { (¬ q) , (¬ r) } }
+-- >  The given formula is: 
+-- >  (¬ ((p ∧ q) → (q ∧ r))) 
+-- > 
+-- >  Convert formula to clause sets... 
+-- >     -Step 1: 
+-- >      (¬ ((¬ (p ∧ q)) ∨ (q ∧ r))) 
+-- > 
+-- >     -Step 2: 
+-- >      ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) 
+-- > 
+-- >  The clause set is: 
+-- >  { { p },  { q },  { (¬ q) , (¬ r) } } 
+-- > 
+-- >  Applying DPLL algorithm to the clause set... 
+-- > 
+-- >  The answer is: 
+-- >  { (¬ r) } 
+-- > 
+-- >  The result is: 
+-- >  It yields Ø, which is satisfiable.
 dpllFormulaPrint :: LogicFormula -> Doc
-dpllFormulaPrint formula =      text "Applying DPLL algorithm to a CNF formula...\n\n" <+>
+dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF formula===\n\n" <+>
                                 text "The given formula is: \n" <+>
                                 formulaExpre formula <+>
+                                text "\n\n Convert formula to clause sets..." <+>
+                                text "\n    -Step 1: \n    " <+>
+                                formulaExpre afterStep1 <+>
+                                text "\n\n    -Step 2: \n    " <+>
+                                formulaExpre afterStep2 <+>
                                 text "\n\n The clause set is: \n" <+>
-                                text "{" <+> clausesPrint (toClauses formula) <+> text "}\n\n" <+>
-                                text "Applying DPLL algorithm to the clause set...\n\n" <+>
+                                text "{" <+> clausesPrint (toClauses formula) <+> text "} \n\n" <+>
+                                text "Applying DPLL algorithm to the clause set... \n\n" <+>
                                 text "The answer is: \n" <+>
                                 clausesPrint (dpllFormula formula) <+>
                                 text "\n\n The result is: \n" <+>
                                 dpllResultPrint (dpllFormula formula)
+                        where afterStep1 = step1 formula
+                              afterStep2 = step2 afterStep1
 
 
 -- | Print out the result of DPLL algorithm to clause sets

@@ -93,13 +93,25 @@ cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
 -- Example:
 --
 -- > $ cnfPrint ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
--- > The given formula is:
--- >  ((p ∨ q) → (q ∨ r)) 
 -- > 
--- > The clause set is:
+-- > ===Apply CNF algorithm to a formula===
+-- > 
+-- > The given formula is:
+-- > ((p ∨ q) → (q ∨ r)) 
+-- > 
+-- > Step 1:
+-- >  ((¬ (p ∨ q)) ∨ (q ∨ r)) 
+-- > 
+-- > Step 2:
+-- >  (((¬ p) ∧ (¬ q)) ∨ (q ∨ r)) 
+-- > 
+-- > Step 3:
+-- >  (((¬ p) ∨ (q ∨ r)) ∧ ((¬ q) ∨ (q ∨ r))) 
+-- > 
+-- > Step 4, the clause set is:
 -- >  { { (¬ p) , q , r } }
 cnfPrint :: LogicFormula -> Doc
-cnfPrint formula  = text "\nApply CNF algorithm to formula" <+>
+cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                     text "The given formula is:\n" <+>
                     formulaExpre formula <+>
                     text "\n\nStep 1:\n" <+>
