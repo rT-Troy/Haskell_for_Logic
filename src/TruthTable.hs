@@ -12,17 +12,17 @@ commentary with @some markup@.
 -}
 module TruthTable where
 
-import Data.List
-import Data.Maybe
-import Text.PrettyPrint
+import Data.List ( intercalate, nub )
+import Data.Maybe ( fromMaybe )
+import Text.PrettyPrint ( Doc, (<+>), text )
 
 import Common
 
 
--- | Main function: Generate a pretty truth table of a given formula
+-- | Main function: Generate a pretty truth table of a given formula.
 -- Example:
 -- 
--- > $ truthTable ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
+-- > $ truthTablePrint ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
 -- > The given formula is:
 -- > ((p → (q → r)) → ((p → q) → (p → r))) 
 -- > Truth table result:
@@ -35,11 +35,12 @@ import Common
 -- > F       T       F       T
 -- > F       F       T       T
 -- > F       F       F       T
-truthTable :: LogicFormula -> Doc
-truthTable formula = text "The given formula is:\n" <+>
+truthTablePrint :: LogicFormula -> Doc
+truthTablePrint formula = text "The given formula is:\n" <+>
                      formulaExpre formula <+>
                      text "\nTruth table result:\n" <+>
-                     text (firstRow ++ intercalate "\n" [rowString status | status <- allPosStatus (uniqVars formula)] )
+                     text (firstRow ++ intercalate "\n" [rowString status | status <- allPosStatus (uniqVars formula)] ) <+>
+                     text "\n"
   where
     firstRow = intercalate "\t" (map (\v -> [v]) (uniqVars formula)) ++ "\tResult\n"
     rowString status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
@@ -49,7 +50,7 @@ truthTable formula = text "The given formula is:\n" <+>
 -- | Get all non-repeating propositional variables from a given formula.
 -- Example:
 -- 
--- > $ uniqVars (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r')))
+-- > $ uniqVars ((Var 'p' :\/ Var 'd') :-> (Var 'q' :/\ Var 'r'))
 -- > "pdqr"
 
 uniqVars :: LogicFormula -> [Char]
@@ -63,7 +64,7 @@ uniqVars Bottom = []
 uniqVars Top = []
 
 
--- | Generate a nested list of all possible variable assignments
+-- | Generate a nested list of all possible variable assignments.
 -- Example: 
 -- 
 -- > $ allPosStatus "pd"
@@ -75,13 +76,13 @@ allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | statu
   where rest = allPosStatus vs
 
 
--- | Calculate the bool value of given formula and case status
+-- | Calculate the bool value of given formula and case status.
 -- Example:
 -- 
 -- > $ calculator (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
 -- > T
 calculator :: LogicFormula -> [(Char, BoolValue)] -> BoolValue
-calculator (Var v) status = fromMaybe (error ("Variable " ++ [v] ++ " Neg found in environment")) (lookup v status)
+calculator (Var v) status = fromMaybe (error ("Variable '" ++ [v] ++ "' not found in status.")) (lookup v status)
 calculator (Neg formula) status = if calculator formula status == T then F else T
 calculator (formula1 :/\ formula2) status = if calculator formula1 status == T && calculator formula2 status == T then T else F
 calculator (formula1 :\/ formula2) status = if calculator formula1 status == F && calculator formula2 status == F then F else T

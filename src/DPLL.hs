@@ -1,6 +1,6 @@
 {-|
 Module      : DPLL
-Description : Implementing Davis-Putnam-Logemann-Lovelace algorithm and DPLL algorithm using Haskell functions
+Description : Implementing Davis-Putnam-Logemann-Lovelace (DPLL) algorithm and DPLL algorithm using Haskell functions
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
@@ -12,43 +12,14 @@ commentary with @some markup@.
 -}
 module DPLL where
     
-import Data.List
+import Data.List ( sortOn )
 
 import Common
 import CNF
 import Text.PrettyPrint
 
--- | Check if the clause sets is satisfiable, and print out the result.
--- | If it is valid, it yields Ø, which is satisfiable.
--- | If it is invalid, it yields empty clause □, which is unsatisfiable.
---
--- Example:
---
--- > $ dpllResultPrint [[Neg (Var 'r')]]
--- > "It yields Ø, which is satisfiable."
-dpllResultPrint :: [[LogicFormula]] -> Doc
-dpllResultPrint clauseSet
-        | not (null clauseSet) = text "It yields Ø, which is satisfiable."
-        | null clauseSet = text "It yields empty clause □, which is unsatisfiable."
-        | otherwise = error "DPLL result error"
 
-
--- | Apply DPLL algorithm to a CNF formula
--- Check if the formula is not valid, its negation should be satisfiable.
--- DPLL resuiting empty [] which means unsatisfiable, otherwise satisfiable.
---
--- Example:
---
--- > $ dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > [[Neg (Var 'r')]]
-dpllFormula :: LogicFormula -> [[LogicFormula]]
-dpllFormula formula 
-        | length (head clauses) == 1 = unitClause clauses
-        | unitClause clauses == unitNegClause clauses = unitClause clauses
-        | otherwise = unitClause clauses ++ unitNegClause clauses
-        where clauses = toClauses formula
-
--- | Print out the result of DPLL algorithm to a CNF formula
+-- | Print out the result of DPLL algorithm to a CNF formula.
 -- Check if the formula is not valid, its negation should be satisfiable.
 -- DPLL resuiting empty [] which means unsatisfiable, otherwise satisfiable.
 --
@@ -116,8 +87,23 @@ dpllClausesPrint clauses =      text "The clause set is: \n" <+>
                                 dpllResultPrint (dpllClauseSets clauses)
 
 
+-- | Apply DPLL algorithm to a CNF formula.
+-- Check if the formula is not valid, its negation should be satisfiable.
+-- DPLL resuiting empty [] which means unsatisfiable, otherwise satisfiable.
+--
+-- Example:
+--
+-- > $ dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > [[Neg (Var 'r')]]
+dpllFormula :: LogicFormula -> [[LogicFormula]]
+dpllFormula formula 
+        | length (head clauses) == 1 = unitClause clauses
+        | unitClause clauses == unitNegClause clauses = unitClause clauses
+        | otherwise = unitClause clauses ++ unitNegClause clauses
+        where clauses = toClauses formula
 
--- | Main function 2: Apply DPLL algorithm to clause sets
+
+-- | Main function 2: Apply DPLL algorithm to clause sets.
 -- DPLL resuiting empty [] means unsatisfiable, otherwise satisfiable
 --
 -- Example:
@@ -132,32 +118,22 @@ dpllClauseSets clauseSet
         where clauses = sortOn length clauseSet
 
 
--- | Convert a CNF formula to a clause set
+-- | Check if the clause sets is satisfiable, and print out the result.
+-- | If it is valid, it yields Ø, which is satisfiable.
+-- | If it is invalid, it yields empty clause □, which is unsatisfiable.
 --
 -- Example:
 --
--- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
-toClauses :: LogicFormula -> [[LogicFormula]]
-toClauses formula = sortOn length (eachClause (toClause (step2 (step1 formula))))       -- ^ sortOn: make the shortest clause in the front
+-- > $ dpllResultPrint [[Neg (Var 'r')]]
+-- > "It yields Ø, which is satisfiable."
+dpllResultPrint :: [[LogicFormula]] -> Doc
+dpllResultPrint clauseSet
+        | not (null clauseSet) = text "It yields Ø, which is satisfiable."
+        | null clauseSet = text "It yields empty clause □, which is unsatisfiable."
+        | otherwise = error "DPLL result error"
 
 
--- | Non-splitting elimination of each clause if exists a unit clause
---
--- Example:
---
--- > $ unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
--- > [[Neg (Var 'r')]]
--- >
--- > $ unitClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
--- > [[]]
-unitClause :: [[LogicFormula]] -> [[LogicFormula]]
-unitClause [] = [[]]
-unitClause clauses@(x:xs) 
-        | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
-        | otherwise = unitClause (sortOn length (eliminate (head x) clauses))
-
--- | Non-splitting elimination of each clause if exists a unit clause
+-- | Non-splitting elimination of each clause if exists a unit clause.
 --
 -- Example:
 --
@@ -177,20 +153,23 @@ unitClausePrint clauses@(x:xs)
                 where sortedClauses = sortOn length (eliminate (head x) clauses)
 
 
--- | Splitting in case no unit clause exists, the literal should be negated
+-- | Non-splitting elimination of each clause if exists a unit clause.
 --
 -- Example:
 --
--- > $ unitNegClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
+-- > $ unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+-- > [[Neg (Var 'r')]]
+-- >
+-- > $ unitClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > [[]]
-unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
-unitNegClause [] = [[]]
-unitNegClause clauses@(x:xs) 
-        | null xs = [x]    -- ^ The case of clause set Ø
-        | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
+unitClause :: [[LogicFormula]] -> [[LogicFormula]]
+unitClause [] = [[]]
+unitClause clauses@(x:xs) 
+        | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
+        | otherwise = unitClause (sortOn length (eliminate (head x) clauses))
 
 
--- | Splitting in case no unit clause exists, the literal should be negated
+-- | Splitting in case no unit clause exists, the literal should be negated.
 --
 -- Example:
 --
@@ -207,8 +186,21 @@ unitNegClausePrint clauses@(x:xs)
                 where sortedClauses = sortOn length (eliminate (revNeg (head x)) clauses)
 
 
+-- | Splitting in case no unit clause exists, the literal should be negated.
+--
+-- Example:
+--
+-- > $ unitNegClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
+-- > [[]]
+unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
+unitNegClause [] = [[]]
+unitNegClause clauses@(x:xs) 
+        | null xs = [x]    -- ^ The case of clause set Ø
+        | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
+
+
 -- | Eliminate all clauses containing specific literal (x),
---  and eliminate all negation of x from all clauses
+--  and eliminate all negation of x from all clauses.
 --
 -- Example:
 -- 
@@ -224,3 +216,13 @@ eliminate x (y:ys)
         | x `elem` y = eliminate x ys   -- ^ x: the specific literal, y: the clause
         | revNeg x `elem` y = filter (\z -> z /= x && z /= revNeg x) y : eliminate x ys
         | otherwise = y : eliminate x ys
+
+
+-- | Convert a CNF formula to a clause set.
+--
+-- Example:
+--
+-- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+toClauses :: LogicFormula -> [[LogicFormula]]
+toClauses formula = sortOn length (eachClause (toClause (step2 (step1 formula))))       -- ^ sortOn: make the shortest clause in the front

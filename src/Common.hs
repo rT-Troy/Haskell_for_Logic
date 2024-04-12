@@ -13,13 +13,14 @@ commentary with @some markup@.
 -}
 module Common where
 
-import Text.PrettyPrint
+import Text.PrettyPrint ( Doc, (<+>), parens, text )
 
 -- | Define the boolvalue type
 data BoolValue = T | F deriving (Show, Eq)
 
 
--- | Basic well-formed rules definition
+-- | Basic well-formed rules definition.
+-- | 
 data LogicFormula = Var Char                          -- ^ propositional variable 
                    | Neg LogicFormula                 -- ^ ¬ φ : negation    Neg (Var 'p')
                    | LogicFormula :/\ LogicFormula    -- ^ φ ∧ ψ
@@ -61,12 +62,23 @@ revNeg (Neg l) = l
 revNeg l = Neg l
 
 
+-- | Pretty print of the given clauses sets, calling literalPrint to print each clause.
+--
+-- Example:
+--
+-- > $ clausesPrint [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
+-- > { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p }
 clausesPrint :: [[LogicFormula]] -> Doc
 clausesPrint [] = text ""
 clausesPrint [x] = text "{" <+> literalPrint x <+> text "}"
 clausesPrint (x:xs) = text "{" <+> literalPrint x <+> text "}, " <+> clausesPrint xs
 
 
+-- | Pretty print of the given literals.
+--
+-- Example:
+--
+-- > $ literalPrint [Neg (Var 'r'),Neg (Var 'p'),Var 'q']
 literalPrint :: [LogicFormula] -> Doc
 literalPrint [] = text "[]"
 literalPrint [x] = formulaExpre x
