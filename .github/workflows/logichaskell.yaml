@@ -1,17 +1,15 @@
-name: logichaskell CI
-
 on: [push]
-
+name: logichaskell
 jobs:
-  build:
+  runhaskell:
     name: Test
     runs-on: ubuntu-latest # or macOS-latest, or windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-haskell@v1.1
         with:
-          ghc-version: '9.2.4' # Exact version of ghc to use
+          ghc-version: '8.8.3' # Exact version of ghc to use
           # cabal-version: 'latest'. Omitted, but defalts to 'latest'
           enable-stack: true
-          stack-version: '2.15.1'
+          stack-version: 'latest'
       - run: stack test
