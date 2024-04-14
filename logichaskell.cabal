@@ -7,16 +7,20 @@ cabal-version: 2.2
 name:           logichaskell
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/rT-Troy/Haskell_for_Logic#readme>
+synopsis:       A Haskell library for Computer Science Logic
 homepage:       https://github.com/githubuser/logichaskell#readme
 bug-reports:    https://github.com/githubuser/logichaskell/issues
 author:         Jun Zhang
 maintainer:     yotroy@foxmail.com
 copyright:      2024 Jun Zhang
+category:       Development
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
+tested-with: GHC==9.4.8
 extra-source-files:
     README.md
+extra-doc-files:
     CHANGELOG.md
 
 source-repository head
@@ -25,10 +29,10 @@ source-repository head
 
 library
   exposed-modules:
-      CNF
-      Common
-      DPLL
-      PropResolution
+      CNF,
+      Common,
+      DPLL,
+      PropResolution,
       TruthTable
   other-modules:
       Paths_logichaskell
@@ -38,14 +42,14 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      QuickCheck
-    , base
-    , doctest
-    , ghc-prim
-    , hlint
-    , hspec
-    , pretty
-    , split
+    QuickCheck >= 2.14.3 && < 2.15,
+    base >= 4.17.2 && < 4.18,
+    ghc-prim >= 0.9.1 && < 0.10,
+    pretty >= 1.1.3 && < 1.2,
+    doctest >= 0.22.2 && < 0.23,
+    hlint >= 3.8 && < 3.9,
+    split >= 0.2.5 && < 0.3,
+    hspec >= 2.11.7 && < 2.12,
   default-language: Haskell2010
 
 executable logichaskell-exe
@@ -58,15 +62,15 @@ executable logichaskell-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , base
-    , doctest
-    , ghc-prim
-    , hlint
-    , hspec
-    , logichaskell
-    , pretty
-    , split
+    QuickCheck >= 2.14.3 && < 2.15,
+    base >= 4.17.2 && < 4.18,
+    ghc-prim >= 0.9.1 && < 0.10,
+    pretty >= 1.1.3 && < 1.2,
+    doctest >= 0.22.2 && < 0.23,
+    hlint >= 3.8 && < 3.9,
+    split >= 0.2.5 && < 0.3,
+    hspec >= 2.11.7 && < 2.12,
+    logichaskell
   default-language: Haskell2010
 
 test-suite logichaskell-test
@@ -80,13 +84,13 @@ test-suite logichaskell-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      QuickCheck
-    , base
-    , doctest
-    , ghc-prim
-    , hlint
-    , hspec
-    , logichaskell
-    , pretty
-    , split
+    QuickCheck >= 2.14.3 && < 2.15,
+    base >= 4.17.2 && < 4.18,
+    ghc-prim >= 0.9.1 && < 0.10,
+    pretty >= 1.1.3 && < 1.2,
+    doctest >= 0.22.2 && < 0.23,
+    hlint >= 3.8 && < 3.9,
+    split >= 0.2.5 && < 0.3,
+    hspec >= 2.11.7 && < 2.12,
+    logichaskell
   default-language: Haskell2010

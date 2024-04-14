@@ -2,11 +2,11 @@ import Test.Hspec
 import Text.PrettyPrint
 import Control.Exception
 
-import Common (showBool, formulaExpre, revNeg, clausesPrint, literalPrint, LogicFormula(..), BoolValue(..))
-import TruthTable (truthTablePrint, uniqVars, allPosStatus, calculator)
-import PropResolution (propResol, propSolve)
-import CNF (cnfPrint, step1, step2, step3, cnfAlgo, step4delsub, step4elim, step4, toClause, eachClause, eachLiteral, toLiteral)
-import DPLL (toClauses, dpllFormula, dpllClauseSets, unitClause, unitNegClause, eliminate)
+import CNF
+import Common
+import PropResolution
+import DPLL
+import TruthTable
 
 main :: IO ()
 main = hspec $ do
