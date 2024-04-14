@@ -11,7 +11,7 @@ Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
 module CNF where
-import Data.List ( nub )
+import Data.List ( nub, sortOn )
 import Text.PrettyPrint ( Doc, (<+>), text )
 
 
@@ -99,8 +99,8 @@ step2 (Neg Top) = Bottom
 step2 (Neg f) = (Neg (step2 f))
 step2 (f1 :/\ f2) = (step2 f1 :/\ step2 f2)
 step2 (f1 :\/ f2) = (step2 f1 :\/ step2 f2)
-step2 (_ :-> _) = error "step1 has bug"
-step2 (_ :<-> _) = error "step1 has bug"
+step2 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1."
+step2 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1."
 step2 f = f
 
 
@@ -116,8 +116,8 @@ step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
 step3 (Neg f) = Neg (step3 f)
 step3 (f1 :/\ f2) = (step3 f1) :/\ (step3 f2)
 step3 (f1 :\/ f2) = (step3 f1) :\/ (step3 f2)
-step3 (_ :-> _) = error "step1 has bug"
-step3 (_ :<-> _) = error "step1 has bug"
+step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1."
+step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1."
 step3 Bottom = Bottom
 step3 Top = Top
 step3 f = f
@@ -130,7 +130,7 @@ step3 f = f
 -- > $ step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r']]
 step4 :: LogicFormula -> [[LogicFormula]]
-step4 list = step4delsub (reverse (step4delsub (map step4elim (eachClause (toClause list)))))
+step4 list = step4delsub (sortOn length (map step4elim (eachClause (toClause list))))   -- ^ sortOn: make the shortest clause in the front
 
 
 -- | The occurrence of duplicate variables was considered.
@@ -142,7 +142,6 @@ step4 list = step4delsub (reverse (step4delsub (map step4elim (eachClause (toCla
 step4delsub ::  [[LogicFormula]] -> [[LogicFormula]]
 step4delsub [] = []
 step4delsub (x:xs)
-    | any (\b -> isSubsetOf b x && isSubsetOf x b) xs = error "should not have repeated variable"
     | any (\b -> isSubsetOf x b) xs = step4delsub xs
     | otherwise = x : step4delsub xs
     where isSubsetOf :: [LogicFormula] -> [LogicFormula] -> Bool
