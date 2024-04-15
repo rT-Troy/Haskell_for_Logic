@@ -1,0 +1,5 @@
+packages: ./*.cabal
+
+package *
+  coverage: True
+  library-coverage: True

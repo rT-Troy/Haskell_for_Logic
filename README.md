@@ -6,26 +6,28 @@
 
 ### Testing
 
+#### Testing by stack
 ```
 stack test
 
 stack test --coverage
+```
 
-doctest -isrc src/CNF.hs
+#### Testing by cabal
+```
+cabal test
 
-doctest -isrc src/TruthTable.hs
 
-doctest -isrc src/Common.hs
-
-doctest -isrc src/CNF.hs
-
-doctest -isrc src/PropResolution.hs
-
-doctest -isrc src/DPLL.hs
 ```
 
 ### Documentation
 
 ```
 stack haddock
+```
+
+### Generate github CI
+
+```
+haskell-ci github logichaskell.cabal
 ```

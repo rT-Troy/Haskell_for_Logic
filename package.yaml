@@ -27,7 +27,6 @@ dependencies:
 - hspec
 - QuickCheck
 - hlint
-- doctest
 
 ghc-options:
 - -Wall
@@ -58,6 +57,12 @@ tests:
   logichaskell-test:
     main:                Spec.hs
     source-dirs:         test
+    other-modules:
+    - CNFSpec
+    - CommonSpec
+    - DPLLSpec
+    - PropResoSpec
+    - TruthTableSpec
     ghc-options:
     - -threaded
     - -rtsopts
