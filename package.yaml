@@ -7,7 +7,7 @@ maintainer:          "yotroy@foxmail.com"
 copyright:           "2024 Jun Zhang"
 synopsis:            A Haskell library for Computer Science Logic
 category:            Development
-tested-with:         GHC==9.4.8
+tested-with:         GHC==9.4.8 || ==9.6.4
 
 
 extra-source-files:

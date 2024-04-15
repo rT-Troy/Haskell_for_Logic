@@ -1,7 +1,7 @@
-module CNFSpec where
+module CNFSpec (cnfTests) where
 import Test.Hspec
-import Text.PrettyPrint
-import Control.Exception
+import Text.PrettyPrint (render)
+import Control.Exception (evaluate)
 
 import Common
 import CNF

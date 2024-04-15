@@ -1,7 +1,5 @@
-module CommonSpec where
+module CommonSpec (commonTests) where
 import Test.Hspec
-import Text.PrettyPrint
-import Control.Exception
 
 import Common
 

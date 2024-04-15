@@ -1,7 +1,5 @@
-module DPLLSpec where
+module DPLLSpec (dpllTests) where
 import Test.Hspec
-import Text.PrettyPrint
-import Control.Exception
 
 import Common
 import DPLL

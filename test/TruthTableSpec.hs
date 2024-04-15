@@ -1,7 +1,7 @@
-module TruthTableSpec where
+module TruthTableSpec (truthTableTests) where
 import Test.Hspec
-import Text.PrettyPrint
-import Control.Exception
+import Text.PrettyPrint (render)
+import Control.Exception (evaluate)
 
 import Common
 import TruthTable

@@ -1,7 +1,5 @@
-module PropResoSpec where
+module PropResoSpec (propResolutionTests) where
 import Test.Hspec
-import Text.PrettyPrint
-import Control.Exception
 
 import Common
 import PropResolution
