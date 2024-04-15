@@ -6,8 +6,8 @@ import Control.Exception
 import Common
 import CNF
 
-CNFTests :: Spec
-CNFTests = describe "CNF Tests" $ do
+cnfTests :: Spec
+cnfTests = describe "CNF Tests" $ do
     it "cnfPrint: convert a formula to CNF" $ do
         let formula = (Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')
         let expectedResult = unlines [

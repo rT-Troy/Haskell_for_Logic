@@ -1,5 +1,7 @@
-packages: ./*.cabal
+packages: logichaskell.cabal
 
-package *
+package logichaskell
   coverage: True
   library-coverage: True
+  documentation: true
+  haddock-options: --html --hoogle --hyperlinked-source

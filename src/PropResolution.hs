@@ -10,7 +10,10 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module PropResolution where
+module PropResolution ( resolClauses
+                      , propResol
+                      , propSolve
+                      ) where
 
 import Common
 

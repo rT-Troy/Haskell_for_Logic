@@ -10,7 +10,17 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module DPLL where
+module DPLL ( dpllFormulaPrint
+            , dpllClausesPrint
+            , dpllFormula
+            , dpllClauseSets
+            , unitClausePrint
+            , unitClause
+            , unitNegClausePrint
+            , unitNegClause
+            , eliminate
+            , toClauses
+            ) where
     
 import Data.List ( sortOn )
 

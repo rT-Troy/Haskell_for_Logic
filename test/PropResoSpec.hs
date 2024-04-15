@@ -6,8 +6,8 @@ import Control.Exception
 import Common
 import PropResolution
 
-PropResolutionTests :: Spec
-PropResolutionTests = describe "PropResolution Tests" $ do
+propResolutionTests :: Spec
+propResolutionTests = describe "PropResolution Tests" $ do
     it "propResol: Implementing propositional resolution" $ do
         propResol [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r'] `shouldBe`
             [Var 'p',Var 'q',Neg (Var 's')]

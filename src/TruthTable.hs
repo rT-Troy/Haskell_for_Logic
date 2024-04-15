@@ -10,7 +10,11 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module TruthTable where
+module TruthTable ( truthTablePrint
+                  , uniqVars
+                  , allPosStatus
+                  , calculator
+                  ) where
 
 import Data.List ( intercalate, nub )
 import Data.Maybe ( fromMaybe )

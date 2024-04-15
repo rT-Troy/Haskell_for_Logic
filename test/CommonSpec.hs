@@ -5,8 +5,8 @@ import Control.Exception
 
 import Common
 
-CommonTests :: Spec
-CommonTests = describe "Common Tests" $ do
+commonTests :: Spec
+commonTests = describe "Common Tests" $ do
     it "showBool: convert BoolValue to String" $ do
         showBool T `shouldBe` "T"
         showBool F `shouldBe` "F"

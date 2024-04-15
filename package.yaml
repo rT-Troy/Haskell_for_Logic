@@ -5,9 +5,14 @@ license:             BSD-3-Clause
 author:              "Jun Zhang"
 maintainer:          "yotroy@foxmail.com"
 copyright:           "2024 Jun Zhang"
+synopsis:            A Haskell library for Computer Science Logic
+category:            Development
+tested-with:         GHC==9.4.8
+
 
 extra-source-files:
 - README.md
+extra-doc-files:
 - CHANGELOG.md
 
 # Metadata used when publishing your package
@@ -20,13 +25,13 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/rT-Troy/Haskell_for_Logic#readme>
 
 dependencies:
-- base
-- split
-- ghc-prim
-- pretty
-- hspec
-- QuickCheck
-- hlint
+- base >= 4.17.2 && < 4.18
+- split >= 0.2.5 && < 0.3
+- ghc-prim >= 0.9.1 && < 0.10
+- pretty >= 1.1.3 && < 1.2
+- hspec >= 2.11.7 && < 2.12
+- QuickCheck >= 2.14.3 && < 2.15
+- hlint >= 3.8 && < 3.9
 
 ghc-options:
 - -Wall

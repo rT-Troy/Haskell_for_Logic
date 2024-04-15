@@ -10,7 +10,19 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module CNF where
+module CNF  ( cnfPrint
+            , cnfAlgo
+            , step1
+            , step2
+            , step3
+            , step4
+            , step4delsub
+            , step4elim
+            , eachClause
+            , toClause
+            , eachLiteral
+            , toLiteral
+  ) where
 import Data.List ( nub, sortOn )
 import Text.PrettyPrint ( Doc, (<+>), text )
 

@@ -17,7 +17,7 @@ stack test --coverage
 ```
 cabal test
 
-
+cabal test --enable-coverage --disable-library-coverage
 ```
 
 ### Documentation
@@ -25,6 +25,8 @@ cabal test
 ```
 stack haddock
 ```
+
+cabal will generate documentation during ```cabal build```.
 
 ### Generate github CI
 

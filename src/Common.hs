@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-|
 Module      : Common
 Description : Common definitions for the project
@@ -11,7 +10,14 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module Common where
+module Common ( LogicFormula(..)
+              , BoolValue(..)
+              , showBool
+              , formulaExpre
+              , revNeg
+              , clausesPrint
+              , literalPrint
+              ) where
 
 import Text.PrettyPrint ( Doc, (<+>), parens, text )
 

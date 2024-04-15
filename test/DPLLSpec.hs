@@ -6,8 +6,8 @@ import Control.Exception
 import Common
 import DPLL
 
-DPLLTests :: Spec
-DPLLTests = describe "DPLL Tests" $ do
+dpllTests :: Spec
+dpllTests = describe "DPLL Tests" $ do
     it "toClauses: " $ do
         -- week 6 lecture
         toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`

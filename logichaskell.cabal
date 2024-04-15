@@ -19,7 +19,7 @@ license-file:   LICENSE
 build-type:     Simple
 tested-with: GHC==9.4.8
 extra-source-files:
-    README.md
+  README.md
 extra-doc-files:
   CHANGELOG.md
 
@@ -29,10 +29,10 @@ source-repository head
 
 library
   exposed-modules:
-    CNF
-    Common
-    DPLL
-    PropResolution
+    CNF,
+    Common,
+    DPLL,
+    PropResolution,
     TruthTable
   other-modules:
     Paths_logichaskell
@@ -75,11 +75,14 @@ test-suite logichaskell-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-    CNFSpec
-    CommonSpec
-    DPLLSpec
-    PropResoSpec
-    TruthTableSpec
+    CNFSpec,
+    CommonSpec,
+    DPLLSpec,
+    PropResoSpec,
+    TruthTableSpec,
+    Paths_logichaskell
+  autogen-modules:
+    Paths_logichaskell
   hs-source-dirs:
     test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
