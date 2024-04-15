@@ -42,6 +42,10 @@ extra-deps:
 #
 # extra-deps: []
 
+ghc-options:
+  $locals: -Wno-missing-export-lists
+  $locals: -Wunused-imports
+
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
