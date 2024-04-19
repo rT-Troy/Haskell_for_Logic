@@ -58,6 +58,7 @@ import Text.PrettyPrint
 -- > 
 -- >  The result is: 
 -- >  It yields Ø, which is satisfiable.
+-- >
 dpllFormulaPrint :: LogicFormula -> Doc
 dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF formula===\n\n" <+>
                                 text "The given formula is: \n" <+>
@@ -73,7 +74,7 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF form
                                 text "The answer is: \n" <+>
                                 clausesPrint (dpllFormula formula) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResultPrint (dpllFormula formula)
+                                dpllResultPrint (dpllFormula formula) <+> text "\n"
                         where afterStep1 = step1 formula
                               afterStep2 = step2 afterStep1
 
@@ -82,19 +83,28 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF form
 -- Example:
 --
 -- > $ dpllClausesPrint [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
--- > The given formula is:
--- >  (¬ ((p ∧ q) → (q ∧ r)))
+-- > ===Applying DPLL algorithm to clause sets===
+-- >
+-- > The clause set is: 
+-- >  { { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p } }
+-- >
+-- >  Applying DPLL algorithm to the clause set...
 -- > 
--- > The clause set is:
--- >  { { p },  { q },  { (¬ q) , (¬ r) } }
+-- >  The answer is: 
+-- >  { [] } 
+-- >
+-- >  The result is: 
+-- >  It yields Ø, which is satisfiable. 
+-- >
 dpllClausesPrint :: [[LogicFormula]] -> Doc
-dpllClausesPrint clauses =      text "The clause set is: \n" <+>
+dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to clause sets===\n\n" <+>
+                                text "The clause set is: \n" <+>
                                 text "{" <+> clausesPrint clauses <+> text "}\n\n" <+>
                                 text "Applying DPLL algorithm to the clause set...\n\n" <+>
                                 text "The answer is: \n" <+>
                                 clausesPrint (dpllClauseSets clauses) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResultPrint (dpllClauseSets clauses)
+                                dpllResultPrint (dpllClauseSets clauses) <+> text "\n"
 
 
 -- | Apply DPLL algorithm to a CNF formula.
@@ -118,8 +128,8 @@ dpllFormula formula
 --
 -- Example:
 --
--- > $ dpllClauseSets (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
--- > [[Neg (Var 'r')]]
+-- > $ dpllClauseSets [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
+-- > [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p',Var 'r'],[Var 't',Var 's',Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
 dpllClauseSets :: [[LogicFormula]] -> [[LogicFormula]]
 dpllClauseSets clauseSet 
         | length (head clauses) == 1 = unitClause clauses
@@ -235,4 +245,4 @@ eliminate x (y:ys)
 -- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 toClauses :: LogicFormula -> [[LogicFormula]]
-toClauses formula = sortOn length (eachClause (toClause (step2 (step1 formula))))       -- ^ sortOn: make the shortest clause in the front
+toClauses formula = sortOn length (cnfAlgo formula)       -- ^ sortOn: make the shortest clause in the front

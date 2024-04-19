@@ -67,13 +67,13 @@ cnfTests = describe "CNF Tests" $ do
             (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))
 
         step3 ((Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ ((Var 'p' :\/ Var 'q') :/\ Bottom :/\ Top)) `shouldBe`
-            ((Neg (Var 'p') :\/ Neg (Var 'q')) :/\ (Neg (Var 'p') :\/ Neg (Var 'r'))) :/\ (((Var 'p' :\/ Var 'q') :/\ Bottom) :/\ Top)
+            (Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ (((Var 'p' :\/ Var 'q') :/\ Bottom) :/\ Top)
 
         evaluate (step3 (Var 'p' :-> Var 'q')) `shouldThrow`
-            errorCall "There should have no -> notation, make sure the fomula has been processed by step1."
+            errorCall "There should have no -> notation, make sure the fomula has been processed by step1Each."
 
         evaluate (step3 (Var 'p' :<-> Var 'q')) `shouldThrow`
-            errorCall "There should have no <-> notation, make sure the fomula has been processed by step1."
+            errorCall "There should have no <-> notation, make sure the fomula has been processed by step1Each."
 
     it "cnfAlgo: convert a formula to CNF" $ do
         cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe` [[Neg (Var 'p'),Var 'q',Var 'r']]
@@ -95,23 +95,6 @@ cnfTests = describe "CNF Tests" $ do
             ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
             [[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q',Var 'r']]
 
-    it "toClause: convert a CNF formula to a list of clauses" $ do
-        toClause (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q'))) `shouldBe` 
-            [(Neg (Var 'p') :\/ Var 'q') :\/ Var 'r',Neg (Var 'p') :\/ Var 'r',Neg (Var 'q')]
-
-    it "eachClause: convert a list of clauses to a 2D list of literals" $ do
-        eachClause [(Neg (Var 'p') :\/ Var 'q') :\/ Var 'r',Neg (Var 'p') :\/ Var 'r',Neg (Var 'q')] `shouldBe`
-            [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'p'),Var 'r'],[Neg (Var 'q')]]
-
-    it "eachLiteral: convert a clause to a list of literals" $ do
-        eachLiteral ((Neg (Var 'p') :\/ Var 'q') :\/ Var 'r') `shouldBe`
-            [Neg (Var 'p'),Var 'q',Var 'r']
-
-    it "toLiteral: convert a CNF formula to a 2D list of literals (non-repeating)" $ do
-        toLiteral (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\
-            ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q'))) `shouldBe`
-            [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'p'),Var 'r'],[Neg (Var 'q')]]
-
     it "DPLL step1: eliminate iff and implication from the input formula" $ do
         -- week6 lecture
         step1 (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
@@ -120,7 +103,3 @@ cnfTests = describe "CNF Tests" $ do
     it "DPLL step2: push negations towards literals" $ do
         step2 (Neg (Neg (Var 'p' :/\ Var 'q') :\/ (Var 'q' :/\ Var 'r'))) `shouldBe`
             (Var 'p' :/\ Var 'q') :/\ (Neg (Var 'q') :\/ Neg (Var 'r'))
-
-    it "DPLL toClause: convert a CNF formula to a list of clauses" $ do
-        toClause ((Var 'p' :/\ Var 'q') :/\ (Neg (Var 'q') :\/ Neg (Var 'r'))) `shouldBe`
-            [Var 'p',Var 'q',Neg (Var 'q') :\/ Neg (Var 'r')]

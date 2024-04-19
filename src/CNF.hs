@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 {-|
 Module      : CNF
 Description : Implementing Conjunctive Normal Form (CNF) algorithm and DPLL algorithm using Haskell functions
@@ -12,22 +13,22 @@ commentary with @some markup@.
 -}
 module CNF  ( cnfPrint
             , cnfAlgo
+            , step1Each
             , step1
             , step2
             , step3
             , step4
             , step4delsub
             , step4elim
-            , eachClause
-            , toClause
-            , eachLiteral
-            , toLiteral
+            , toClauseSets
+            , splitConj
+            , splitDisj
   ) where
-import Data.List ( nub, sortOn )
+import Data.List ( sortOn )
 import Text.PrettyPrint ( Doc, (<+>), text )
-
-
+--import Data.List.Split (splitOn)
 import Common
+
 
 
 -- | Main function: Implementing CNF algorithm in pretty print.
@@ -67,7 +68,7 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                 where afterStep1 = step1 formula
                       afterStep2 = step2 afterStep1
                       afterStep3 = step3 afterStep2
-                      afterStep4 = step4 afterStep3
+                      afterStep4 = step4 (iffSplit formula)
 
 
 -- | Implementing CNF algorithm following the step 1 to step 4.
@@ -76,8 +77,33 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
 --
 -- > $ cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r']]
+-- >
+-- > $ cnfAlgo ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+-- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'r'),Var 'p',Var 'q']]
 cnfAlgo :: LogicFormula -> [[LogicFormula]]
-cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
+cnfAlgo formula = step4 (iffSplit formula)
+
+
+iffSplit :: LogicFormula -> LogicFormula
+iffSplit (f1 :<-> f2) = step3 (step2 (step1Each (f1 :-> f2))) :/\ step3 (step2 (step1Each (f2 :-> f1)))
+iffSplit f = step3 (step2 (step1Each f))    -- iffSplit (f1 :-> f2) = [[step1Each (f1 :-> f2)]]
+
+-- | CNF step1Each: eliminate iff ↔ and implication → from the input formula.
+--
+-- Example:
+--
+-- > $ step1Each ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+-- > Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
+-- > $ step1Each ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+-- > (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))
+step1Each :: LogicFormula -> LogicFormula
+step1Each (f1 :-> f2) = step1Each (Neg f1) :\/ step1Each f2
+step1Each (Neg f) = Neg (step1Each f)
+step1Each (f1 :/\ f2) = step1Each f1 :/\ step1Each f2
+step1Each (f1 :\/ f2) = step1Each f1 :\/ step1Each f2
+step1Each Bottom = Bottom
+step1Each Top = Top
+step1Each f = f
 
 
 -- | CNF step1: eliminate iff ↔ and implication → from the input formula.
@@ -100,17 +126,20 @@ step1 f = f
 --
 -- Example:
 --
--- > $ step2 (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r'))
+-- > $ step2 ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')))
 -- > (Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')
+-- >
+-- > $ step2 ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q')))
+-- > ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 step2 :: LogicFormula -> LogicFormula
 step2 (Neg (Neg f)) = step2 f
-step2 (Neg (f1 :/\ f2)) = (step2 (Neg f1) :\/ step2 (Neg f2))
-step2 (Neg (f1 :\/ f2)) = (step2 (Neg f1) :/\ step2 (Neg f2))
+step2 (Neg (f1 :/\ f2)) = step2 (Neg f1) :\/ step2 (Neg f2)
+step2 (Neg (f1 :\/ f2)) = step2 (Neg f1) :/\ step2 (Neg f2)
 step2 (Neg Bottom) = Top
 step2 (Neg Top) = Bottom
-step2 (Neg f) = (Neg (step2 f))
-step2 (f1 :/\ f2) = (step2 f1 :/\ step2 f2)
-step2 (f1 :\/ f2) = (step2 f1 :\/ step2 f2)
+step2 (Neg f) = Neg (step2 f)
+step2 (f1 :/\ f2) = step2 f1 :/\ step2 f2
+step2 (f1 :\/ f2) = step2 f1 :\/ step2 f2
 step2 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1."
 step2 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1."
 step2 f = f
@@ -122,14 +151,17 @@ step2 f = f
 --
 -- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r'))
 -- > (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
+-- >
+-- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
+-- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 step3 :: LogicFormula -> LogicFormula
+step3 ((a :\/ (b :/\ c)) :/\ (d :\/ (e :/\ f))) = ( a :\/  b :/\  a :\/  c) :/\ ( d :\/  e :/\  d :\/  f)
+step3 (((a :/\ b) :\/ c) :/\ ((d :/\ e) :\/ f)) = ( a :\/  c :/\  b :\/  c) :/\ ( d :\/  f :/\  e :\/  f)
 step3 (x :\/ (y :/\ z)) = (step3 x :\/ step3 y) :/\ (step3 x :\/ step3 z)
 step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
 step3 (Neg f) = Neg (step3 f)
-step3 (f1 :/\ f2) = (step3 f1) :/\ (step3 f2)
-step3 (f1 :\/ f2) = (step3 f1) :\/ (step3 f2)
-step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1."
-step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1."
+step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1Each."
+step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1Each."
 step3 Bottom = Bottom
 step3 Top = Top
 step3 f = f
@@ -141,9 +173,11 @@ step3 f = f
 --
 -- > $ step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r']]
+-- >
+-- > $ step4 (((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q')))
+-- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
-step4 list = step4delsub (sortOn length (map step4elim (eachClause (toClause list))))   -- ^ sortOn: make the shortest clause in the front
-
+step4 list = step4delsub (sortOn length (map step4elim (toClauseSets list)))   -- ^ sortOn: make the shortest clause in the front
 
 -- | The occurrence of duplicate variables was considered.
 --
@@ -173,40 +207,18 @@ step4elim (x:xs)
     | otherwise = x : step4elim xs
 
 
--- | Convert a list of clauses to a 2D list of literals.
+-- | Convert a CNF formula to a list of clauses,
+-- |  then convert each clause to a list of literals.
 -- Example:
 --
--- > $ eachClause [(Neg (Var 'p') :\/ Var 'q') :\/ Var 'r',Neg (Var 'p') :\/ Var 'r',Neg (Var 'q')]
--- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'p'),Var 'r'],[Neg (Var 'q')]]
-eachClause :: [LogicFormula] -> [[LogicFormula]]
-eachClause [] = []
-eachClause (clause:clauses) = [eachLiteral clause] ++ eachClause clauses
+-- > $ 
+toClauseSets :: LogicFormula -> [[LogicFormula]]
+toClauseSets expr = map splitDisj (splitConj expr)
 
+splitConj :: LogicFormula -> [LogicFormula]
+splitConj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
+splitConj formula = [formula]
 
--- | Convert a CNF formula to a list of clauses.
--- Example:
---
--- > $ toClause (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q')))
--- > [(Neg (Var 'p') :\/ Var 'q') :\/ Var 'r',Neg (Var 'p') :\/ Var 'r',Neg (Var 'q')]
-toClause :: LogicFormula -> [LogicFormula]
-toClause (clause1 :/\ clause2) = toClause clause1 ++ toClause clause2
-toClause clause = [clause]
-
-
--- | Convert a clause to a list of literals.
--- Example:
---
--- > $ eachLiteral ((Neg (Var 'p') :\/ Var 'q') :\/ Var 'r')
--- > [Neg (Var 'p'),Var 'q',Var 'r']
-eachLiteral :: LogicFormula -> [LogicFormula]
-eachLiteral (literal1 :\/ literal2) = eachLiteral literal1 ++ eachLiteral literal2
-eachLiteral literal = [literal]
-
-
--- | Convert a CNF formula to a 2D list of literals (non-repeating).
--- Example:
---
--- > $ toLiteral (((Neg (Var 'p')) :\/ Var 'q' :\/ Var 'r') :/\ ((Neg (Var 'p')) :\/ Var 'r') :/\ (Neg (Var 'q')))
--- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'p'),Var 'r'],[Neg (Var 'q')]]
-toLiteral :: LogicFormula -> [[LogicFormula]]
-toLiteral formula = nub (eachClause (toClause formula))
+splitDisj :: LogicFormula -> [LogicFormula]
+splitDisj (f1 :\/ f2) = splitDisj f1 ++ splitDisj f2
+splitDisj formula = [formula]
