@@ -13,6 +13,7 @@ commentary with @some markup@.
 -}
 module CNF  ( cnfPrint
             , cnfAlgo
+            , iffSplit
             , step1Each
             , step1
             , step2
@@ -26,8 +27,9 @@ module CNF  ( cnfPrint
   ) where
 import Data.List ( sortOn )
 import Text.PrettyPrint ( Doc, (<+>), text )
---import Data.List.Split (splitOn)
 import Common
+import Data.List.Split
+
 
 
 
@@ -67,7 +69,7 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                     text "{" <+> clausesPrint afterStep4 <+> text "}\n"
                 where afterStep1 = step1 formula
                       afterStep2 = step2 afterStep1
-                      afterStep3 = step3 afterStep2
+                      afterStep3 = iffSplit formula
                       afterStep4 = step4 (iffSplit formula)
 
 
@@ -84,9 +86,18 @@ cnfAlgo :: LogicFormula -> [[LogicFormula]]
 cnfAlgo formula = step4 (iffSplit formula)
 
 
+-- | CNF iffSplit: eliminate iff ↔ from the input formula to implication,
+-- |  then implement step1 to step3 for each implication.
+--
+-- Example:
+--
+-- > $ iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+-- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 iffSplit :: LogicFormula -> LogicFormula
-iffSplit (f1 :<-> f2) = step3 (step2 (step1Each (f1 :-> f2))) :/\ step3 (step2 (step1Each (f2 :-> f1)))
+iffSplit (Neg (f1 :<-> f2)) = step3 (step2 (Neg (step1Each (iffSplit f1 :-> iffSplit f2)))) :/\ step3 (step2 (Neg (step1Each (iffSplit f2 :-> iffSplit f1))))
+iffSplit (f1 :<-> f2) = step3 (step2 (step1Each (iffSplit f1 :-> iffSplit f2))) :/\ step3 (step2 (step1Each (iffSplit f2 :-> iffSplit f1)))
 iffSplit f = step3 (step2 (step1Each f))    -- iffSplit (f1 :-> f2) = [[step1Each (f1 :-> f2)]]
+
 
 -- | CNF step1Each: eliminate iff ↔ and implication → from the input formula.
 --
@@ -112,6 +123,9 @@ step1Each f = f
 --
 -- > $ step1 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
 -- > Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
+-- >
+-- > $ step1 (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
+-- > Neg ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 step1 :: LogicFormula -> LogicFormula
 step1 (f1 :-> f2) = (step1 (Neg f1)) :\/ (step1 f2)
 step1 (f1 :<-> f2) = (step1 (step1 f1 :-> step1 f2)) :/\ (step1 (step1 f2 :-> step1 f1))
@@ -128,6 +142,8 @@ step1 f = f
 --
 -- > $ step2 ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')))
 -- > (Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')
+-- >
+-- > $ step2 (Neg ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))))
 -- >
 -- > $ step2 ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 -- > ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
@@ -152,18 +168,17 @@ step2 f = f
 -- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r'))
 -- > (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 -- >
+-- > $ step3 (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'q' :\/ Var 'r') :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))
+-- > (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :\/ Var 'r')) :/\ (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Neg (Var 'p') :/\ Neg (Var 'q')))
+-- >
 -- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 step3 :: LogicFormula -> LogicFormula
-step3 ((a :\/ (b :/\ c)) :/\ (d :\/ (e :/\ f))) = ( a :\/  b :/\  a :\/  c) :/\ ( d :\/  e :/\  d :\/  f)
-step3 (((a :/\ b) :\/ c) :/\ ((d :/\ e) :\/ f)) = ( a :\/  c :/\  b :\/  c) :/\ ( d :\/  f :/\  e :\/  f)
 step3 (x :\/ (y :/\ z)) = (step3 x :\/ step3 y) :/\ (step3 x :\/ step3 z)
 step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
 step3 (Neg f) = Neg (step3 f)
 step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1Each."
 step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1Each."
-step3 Bottom = Bottom
-step3 Top = Top
 step3 f = f
 
 
@@ -211,12 +226,26 @@ step4elim (x:xs)
 -- |  then convert each clause to a list of literals.
 -- Example:
 --
--- > $ 
+-- > $ toClauseSets ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
+-- toClauseSets :: LogicFormula -> [[String]]
+-- toClauseSets formula =  splitDisj (splitConj formula)
+
+
+-- splitConj :: LogicFormula -> [String]
+-- splitConj formula = splitOn ":/\\" (show formula)
+
+-- splitDisj :: [String] -> [[String]]
+-- splitDisj [] = []
+-- splitDisj (x:xs) = [splitOn ":\\/" x] ++ splitDisj xs
+
 toClauseSets :: LogicFormula -> [[LogicFormula]]
-toClauseSets expr = map splitDisj (splitConj expr)
+toClauseSets formula = map splitDisj (splitConj formula)
+
 
 splitConj :: LogicFormula -> [LogicFormula]
 splitConj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
+splitConj ((f1 :/\ f2) :\/ other) = splitConj (f1 :/\ f2) ++ splitConj other
+splitConj (other :\/ (f1 :/\ f2)) = splitConj other ++ splitConj (f1 :/\ f2)
 splitConj formula = [formula]
 
 splitDisj :: LogicFormula -> [LogicFormula]

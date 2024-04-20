@@ -31,6 +31,15 @@ cnfTests = describe "CNF Tests" $ do
                 ]
         render (cnfPrint formula) `shouldBe` expectedResult
 
+    it "iffSplit" $ do
+        iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')) `shouldBe` 
+            ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\
+             ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
+
+    it "step1Each" $ do
+        step1Each ((Top :\/ Var 'q') :-> (Var 'q' :\/ Bottom)) `shouldBe` 
+            Neg (Top :\/ Var 'q') :\/ (Var 'q' :\/ Bottom)
+
     it "step1: eliminate iff and implication from the input formula" $ do
         -- week6 lecture
         step1 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe`
@@ -50,8 +59,8 @@ cnfTests = describe "CNF Tests" $ do
         step2 (Neg (Var 'p' :\/ (Var 'q' :\/ Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
             (Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')
 
-        step2 (Neg (Var 'p' :\/ Bottom) :\/ (Var 'q' :\/ Neg Top)) :/\ (Neg (Var 'q' :\/ Top) :\/ (Var 'p' :\/ Bottom)) `shouldBe`
-            ((Neg (Var 'p') :/\ Top) :\/ (Var 'q' :\/ Bottom)) :/\ (Neg (Var 'q' :\/ Top) :\/ (Var 'p' :\/ Bottom))
+        step2 ((Neg (Var 'p' :\/ Bottom) :\/ (Var 'q' :\/ Neg Top)) :/\ (Neg (Var 'q' :\/ Top) :\/ (Var 'p' :\/ Bottom))) `shouldBe`
+            ((Neg (Var 'p') :/\ Top) :\/ (Var 'q' :\/ Bottom)) :/\ ((Neg (Var 'q') :/\ Bottom) :\/ (Var 'p' :\/ Bottom))
 
         evaluate (step2 (Var 'p' :-> Var 'q')) `shouldThrow`
             errorCall "There should have no -> notation, make sure the fomula has been processed by step1."
@@ -63,11 +72,17 @@ cnfTests = describe "CNF Tests" $ do
         step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
             (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 
+        step3 ((Var 'q' :\/ Var 'r') :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe`
+            ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'p')) :/\ ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'q'))
+
         step3 ((Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
             (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))
 
         step3 ((Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ ((Var 'p' :\/ Var 'q') :/\ Bottom :/\ Top)) `shouldBe`
             (Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ (((Var 'p' :\/ Var 'q') :/\ Bottom) :/\ Top)
+
+        step3 (Top :\/ Bottom :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe` 
+            ((Top :\/ Bottom) :\/ Neg (Var 'p')) :/\ ((Top :\/ Bottom) :\/ Neg (Var 'q'))
 
         evaluate (step3 (Var 'p' :-> Var 'q')) `shouldThrow`
             errorCall "There should have no -> notation, make sure the fomula has been processed by step1Each."
@@ -79,13 +94,19 @@ cnfTests = describe "CNF Tests" $ do
         cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe` [[Neg (Var 'p'),Var 'q',Var 'r']]
 
         cnfAlgo ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :-> ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
-            [[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q',Var 'r']]
+            [[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r']]
 
     it "step4delsub: remove duplicate variables" $ do
-        step4delsub [[Var 'r'],[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe` [[Neg (Var 'p'),Var 'q',Var 'r']]
+        step4delsub [[Var 'r'],[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe`
+         [[Neg (Var 'p'),Var 'q',Var 'r']]
+
+        step4delsub [[Var 'd'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe`
+         [[Var 'd'],[Neg (Var 'p'),Var 'q',Var 'r']]
+
 
     it "step4elim" $ do
         step4elim ([Neg (Var 'q'),Var 'q',Var 'r']) `shouldBe` [Var 'r']
+        step4elim ([Neg (Var 'p'),Var 'q',Var 'r']) `shouldBe` [Neg (Var 'p'),Var 'q',Var 'r']
 
     it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do
         step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) `shouldBe`
@@ -93,7 +114,7 @@ cnfTests = describe "CNF Tests" $ do
 
         step4 ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
             ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
-            [[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q',Var 'r']]
+            [[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r']]
 
     it "DPLL step1: eliminate iff and implication from the input formula" $ do
         -- week6 lecture

@@ -19,6 +19,7 @@ commonTests = describe "Common Tests" $ do
     it "LogicFormula: can be equated" $ do
         (Var 'p') `shouldBe` (Var 'p')
         (Var 'p') `shouldNotBe` (Neg (Var 'p'))
+        (Neg (Var 'p')) `shouldBe` (Neg (Var 'p'))
 
     it "LogicFormula: can be shown" $ do
         show (Var 'p') `shouldBe` "Var 'p'"

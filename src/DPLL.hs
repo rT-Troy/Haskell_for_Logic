@@ -35,19 +35,34 @@ import Text.PrettyPrint
 --
 -- Example:
 --
--- > $ dpllFormulaPrint (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > $ dpllFormulaPrint ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))
 -- > ===Applying DPLL algorithm to a CNF formula===
 -- > 
 -- >  The given formula is: 
 -- >  (¬ ((p ∧ q) → (q ∧ r))) 
 -- > 
--- >  Convert formula to clause sets... 
--- >     -Step 1: 
--- >      (¬ ((¬ (p ∧ q)) ∨ (q ∧ r))) 
+-- >  The negation is: 
+-- >  (¬ ((p ∧ q) → (q ∧ r))) 
+-- >
+-- > We want to show this formula is not valid, so its negation should be satisfiable...
+-- >
+-- > ===Apply CNF algorithm to a formula===
 -- > 
--- >     -Step 2: 
--- >      ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) 
+-- >  The given formula is:
+-- >  ((p ∨ q) → (q ∨ r)) 
 -- > 
+-- > Step 1:
+-- >  ((¬ (p ∨ q)) ∨ (q ∨ r)) 
+-- > 
+-- > Step 2:
+-- >  (((¬ p) ∧ (¬ q)) ∨ (q ∨ r)) 
+-- > 
+-- > Step 3:
+-- >  (((¬ p) ∨ (q ∨ r)) ∧ ((¬ q) ∨ (q ∨ r))) 
+-- > 
+-- > Step 4, the clause set is:
+-- >  { { (¬ p) , q , r } }
+-- >
 -- >  The clause set is: 
 -- >  { { p },  { q },  { (¬ q) , (¬ r) } } 
 -- > 
@@ -63,20 +78,17 @@ dpllFormulaPrint :: LogicFormula -> Doc
 dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF formula===\n\n" <+>
                                 text "The given formula is: \n" <+>
                                 formulaExpre formula <+>
-                                text "\n\n Convert formula to clause sets..." <+>
-                                text "\n    -Step 1: \n    " <+>
-                                formulaExpre afterStep1 <+>
-                                text "\n\n    -Step 2: \n    " <+>
-                                formulaExpre afterStep2 <+>
-                                text "\n\n The clause set is: \n" <+>
-                                text "{" <+> clausesPrint (toClauses formula) <+> text "} \n\n" <+>
-                                text "Applying DPLL algorithm to the clause set... \n\n" <+>
+                                text "\n\n The negation is: \n" <+>
+                                formulaExpre negFormula <+>
+                                text "\n\n We want to show this formula is not valid, so its negation should be satisfiable... \n\n" <+>
+                                cnfPrint negFormula <+>
+                                text "\n Applying DPLL algorithm to the clause set... \n\n" <+>
                                 text "The answer is: \n" <+>
-                                clausesPrint (dpllFormula formula) <+>
+                                clausesPrint (dpllFormula negFormula) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResultPrint (dpllFormula formula) <+> text "\n"
-                        where afterStep1 = step1 formula
-                              afterStep2 = step2 afterStep1
+                                dpllResultPrint (dpllFormula negFormula) <+> text "\n"
+                where   negFormula = Neg formula
+
 
 
 -- | Print out the result of DPLL algorithm to clause sets
@@ -244,5 +256,8 @@ eliminate x (y:ys)
 --
 -- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+-- >
+-- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')))
+
 toClauses :: LogicFormula -> [[LogicFormula]]
 toClauses formula = sortOn length (cnfAlgo formula)       -- ^ sortOn: make the shortest clause in the front
