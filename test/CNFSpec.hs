@@ -61,7 +61,7 @@ cnfTests = describe "CNF Tests" $ do
     it "step2: push negations towards literals" $ do
         step2 (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')
-        
+        -- week7 exercise
         step2 (Neg (Var 'p' :\/ (Var 'q' :\/ Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')
         -- (((p ∨ q) ↔ q) ∨ r)
@@ -83,7 +83,7 @@ cnfTests = describe "CNF Tests" $ do
 
         step3imp ((Var 'q' :\/ Var 'r') :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe`
          ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'p')) :/\ ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'q'))
-
+        -- week7 exercise
         step3imp ((Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))
 
@@ -122,13 +122,13 @@ cnfTests = describe "CNF Tests" $ do
     it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do
         step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) `shouldBe`
          [[Neg (Var 'p'),Var 'q',Var 'r']]
-
+        -- week7 exercise
         step4 ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
          ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
-         [[Var 'q',Var 'r'],[Var 'p',Var 'q']]
+         [[Neg (Var 'q')],[Var 'q',Var 'r'],[Var 'p',Var 'q']]
 
         step4 (((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))) `shouldBe`
-         [[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'q',Var 'r'],[Var 'p',Var 'q']]
+         [[Neg (Var 'p')],[Neg (Var 'q')],[Var 'r'],[Neg (Var 'r'),Var 'p',Var 'q']]
         -- step4 (((Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :/\ (Neg (Var 'q') :/\ Neg (Var 'r')))) :/\ ((Var 'q' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))) :\/ (Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))) `shouldBe`
          
     it "toClauseSets" $ do

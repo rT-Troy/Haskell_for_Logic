@@ -26,12 +26,9 @@ module CNF  ( cnfPrint
             , splitDisj
   ) where
 import Data.List ( sortOn )
-import Data.List.Split ()
 import Text.PrettyPrint ( Doc, (<+>), text )
+import Data.List.Split ( splitOn )
 import Common
-
-
-
 
 
 -- | Main function: Implementing CNF algorithm in pretty print.
@@ -185,19 +182,6 @@ step3imp (_ :<-> _) = error "There should have no <-> notation, make sure the fo
 step3imp f = f
 
 
-step4Print :: LogicFormula -> Doc
-step4Print clauses =    text "\n" <+>
-                        clausesPrint clauseSets <+>
-                        text "\n" <+>
-                        clausesPrint elimLiteral <+>
-                        text "\n" <+>
-                        clausesPrint delDubli
-                    where   clauseSets = sortOn length (toClauseSets clauses)
-                            elimLiteral = map step4elim clauseSets
-                            delDubli = step4delsub (sortOn length elimLiteral)
-
-
-
 -- | CNF step4: simplify resulting CNF-formulas by removing duplicate literals.
 --
 -- Example:
@@ -210,6 +194,7 @@ step4Print clauses =    text "\n" <+>
 step4 :: LogicFormula -> [[LogicFormula]]
 step4 list = step4delsub (sortOn length (map step4elim clauseSets))   -- ^ sortOn: make the shortest clause in the front
     where clauseSets = sortOn length (toClauseSets list)
+
 
 -- | The occurrence of duplicate variables was considered.
 --
@@ -246,69 +231,31 @@ step4elim (x:xs)
 -- > $ toClauseSets ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
 -- > [[Neg (Var 'p'),Var 'p',Var 'q',Var 'r'],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r']]
 toClauseSets :: LogicFormula -> [[LogicFormula]]
-toClauseSets formula 
-    | length (splitConj formula) == 1 = doubletoClauseSets (map splitDisj (splitConj formula))
-    | otherwise = doubletoClauseSets (map splitDisj (splitConj formula))
+toClauseSets formula = map (map strToLogicFormula) (toClausesString (stringFilter formula))
 
 
-splitConj :: LogicFormula -> [LogicFormula]
-splitConj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
--- splitConj (f1 :\/ f2) = splitDisj f1 ++ splitDisj f2
-splitConj formula = [formula]
+toClausesString :: String -> [[String]]
+toClausesString formula = map splitDisj (splitConj formula)
 
 
-splitDisj :: LogicFormula -> [LogicFormula]
-splitDisj (f1 :\/ f2) = splitDisj f1 ++ splitDisj f2
-splitDisj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
-splitDisj formula = [formula]
+splitConj :: String -> [String]
+splitConj clause = splitOn ":/\\" clause
 
-doubletoClauseSets :: [[LogicFormula]] -> [[LogicFormula]]
-doubletoClauseSets [] = []
-doubletoClauseSets (x:xs) = doubleSplitConj x ++ doubletoClauseSets xs
 
-doubleSplitConj :: [LogicFormula] -> [[LogicFormula]]
-doubleSplitConj [f1 :/\ f2] = doubleSplitConj [f1] ++ doubleSplitConj [f2]
-doubleSplitConj x = [x]
+splitDisj :: String -> [String]
+splitDisj clause = splitOn ":\\/" clause
 
 
 stringFilter :: LogicFormula -> String
-stringFilter formula = filter (\x -> x /= '(' && x /= ')') (show formula)
+stringFilter (Var c) = "Var '" ++ [c] ++ "'"
+stringFilter (Neg f) = "Neg (" ++ stringFilter f ++ ")"
+stringFilter (f1 :/\ f2) = stringFilter f1 ++ " :/\\ " ++ stringFilter f2
+stringFilter (f1 :\/ f2) = stringFilter f1 ++ " :\\/ " ++ stringFilter f2
+stringFilter (f1 :-> f2) = stringFilter f1 ++ " :-> " ++ stringFilter f2
+stringFilter (f1 :<-> f2) = stringFilter f1 ++ " :<-> " ++ stringFilter f2
+stringFilter Bottom = "Bottom"
+stringFilter Top = "Top"
 
 
--- ghci> cnfPrint (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
-
--- ===Apply CNF algorithm to a formula===
-
---  The given formula is:
---  (¬ ((p ∨ q) ↔ (q ∨ r))) 
-
--- Step 1:
---  (¬ (((¬ (p ∨ q)) ∨ (q ∨ r)) ∧ ((¬ (q ∨ r)) ∨ (p ∨ q)))) 
-
--- Step 2:
---  (((p ∨ q) ∧ ((¬ q) ∧ (¬ r))) ∨ ((q ∨ r) ∧ ((¬ p) ∧ (¬ q)))) 
-
--- Step 3:
---  (((p ∧ ((¬ q) ∧ (¬ r))) ∨ (q ∧ ((¬ q) ∧ (¬ r)))) ∨ ((q ∧ ((¬ p) ∧ (¬ q))) ∨ (r ∧ ((¬ p) ∧ (¬ q))))) 
-
--- Step 4, the clause set is:
---  { { (p ∧ ((¬ q) ∧ (¬ r))) , (q ∧ ((¬ q) ∧ (¬ r))) , (q ∧ ((¬ p) ∧ (¬ q))) , (r ∧ ((¬ p) ∧ (¬ q))) } }
-
--- ghci> cnfPrint ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
-
--- ===Apply CNF algorithm to a formula===
-
---  The given formula is:
---  ((p ∨ q) ↔ (q ∨ r)) 
-
--- Step 1:
---  (((¬ (p ∨ q)) ∨ (q ∨ r)) ∧ ((¬ (q ∨ r)) ∨ (p ∨ q))) 
-
--- Step 2:
---  ((((¬ p) ∧ (¬ q)) ∨ (q ∨ r)) ∧ (((¬ q) ∧ (¬ r)) ∨ (p ∨ q))) 
-
--- Step 3:
---  ((((¬ p) ∨ (q ∨ r)) ∧ ((¬ q) ∨ (q ∨ r))) ∧ (((¬ q) ∨ (p ∨ q)) ∧ ((¬ r) ∨ (p ∨ q)))) 
-
--- Step 4, the clause set is:
---  { { (¬ p) , q , r },  { (¬ r) , p , q } }
+strToLogicFormula :: String -> LogicFormula
+strToLogicFormula formula = read formula :: LogicFormula

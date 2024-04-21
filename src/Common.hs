@@ -35,7 +35,7 @@ data LogicFormula = Var Char                          -- ^ propositional variabl
                    | LogicFormula :<-> LogicFormula   -- ^ φ ↔ ψ
                    | Bottom                           -- ^ ⊥
                    | Top                              -- ^ ⊤
-                       deriving (Show, Eq)
+                       deriving (Show, Eq, Read)
 
 -- | Show value of Bool type to String
 showBool :: BoolValue -> String
