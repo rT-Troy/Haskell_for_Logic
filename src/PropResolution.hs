@@ -25,8 +25,7 @@ import Common
 -- > $ resolClauses [[Var 'p',Var 'q'],[Var 'p',Neg (Var 'q')],[Neg (Var 'p'),Var 'q'],[Neg (Var 'p'),Neg (Var 'q')]]
 -- > [Var 'p',Var 'q',Neg (Var 's')]
 resolClauses :: [[LogicFormula]] -> [LogicFormula]
-resolClauses [] = []
-resolClauses (x:xs) = propResol x (resolClauses xs)
+resolClauses = foldr propResol []
 
 -- | Implementing propositional resolution rule.
 -- It takes 2 clauses as input, combines them and eliminates the tautological literals in @propSolve@.

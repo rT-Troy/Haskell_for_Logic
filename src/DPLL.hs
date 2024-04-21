@@ -26,7 +26,7 @@ import Data.List ( sortOn )
 
 import Common
 import CNF
-import Text.PrettyPrint
+import Text.PrettyPrint ( Doc, (<+>), text )
 
 
 -- | Print out the result of DPLL algorithm to a CNF formula.

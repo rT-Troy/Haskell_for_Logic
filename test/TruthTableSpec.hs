@@ -17,6 +17,7 @@ truthTableTests = describe "TruthTable Tests" $ do
 
     it "uniqVars: return all unique variables in a formula" $ do
         uniqVars ((Var 'p' :\/ Var 'd') :-> (Var 'q' :/\ Var 'r')) `shouldBe` "pdqr"
+        
         uniqVars ((Var 'p' :\/ Neg (Var 'd') :\/ Bottom) :<-> (Var 'q' :/\ Var 'r' :/\ Top)) `shouldBe` "pdqr"
 
     it "allPosStatus: return all possible variable assignments" $ do
@@ -24,14 +25,23 @@ truthTableTests = describe "TruthTable Tests" $ do
 
     it "calculator: calculate the bool value of a given formula and case status" $ do
         calculator ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q')
-            :-> (Var 'p' :-> Var 'r'))) [('p',T),('q',T),('r',T)] `shouldBe` T
+         :-> (Var 'p' :-> Var 'r'))) [('p',T),('q',T),('r',T)] `shouldBe` T
+
         calculator ((Neg (Var 'p') :\/ Neg (Var 'd') :\/ Bottom)
-            :-> (Var 'q' :/\ Var 'r' :/\ Top)) [('p',T),('d',F),('q',T),('r',F)] `shouldBe` F
+         :-> (Var 'q' :/\ Var 'r' :/\ Top)) [('p',T),('d',F),('q',T),('r',F)] `shouldBe` F
+
         calculator (Var 'p' :/\ Var 'q') [('p',T),('q',F)] `shouldBe` F
+
         calculator (Var 'p' :/\ Var 'q') [('p',T),('q',T)] `shouldBe` T
+
         calculator (Var 'p' :\/ Var 'q') [('p',T),('q',F)] `shouldBe` T
+
         calculator (Var 'p' :\/ Var 'q') [('p',F),('q',F)] `shouldBe` F
+
         evaluate (calculator (Var 'p' :<-> Var 'q') [('p',T),('q',T)]) `shouldThrow` errorCall "The formula is invalid."
+
         evaluate (calculator (Var 'p' :-> Var 'q') [('p',T)]) `shouldThrow` errorCall "Variable 'q' not found in status."
+
         calculator Bottom [] `shouldBe` F
+
         calculator Top [] `shouldBe` T

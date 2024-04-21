@@ -14,10 +14,10 @@ commentary with @some markup@.
 module CNF  ( cnfPrint
             , cnfAlgo
             , iffSplit
-            , step1Each
+            , step1imp
             , step1
             , step2
-            , step3
+            , step3imp
             , step4
             , step4delsub
             , step4elim
@@ -26,9 +26,10 @@ module CNF  ( cnfPrint
             , splitDisj
   ) where
 import Data.List ( sortOn )
+import Data.List.Split ()
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Common
-import Data.List.Split
+
 
 
 
@@ -64,12 +65,12 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                     text "\n\nStep 2:\n" <+>
                     formulaExpre afterStep2 <+>
                     text "\n\nStep 3:\n" <+>
-                    formulaExpre afterStep3 <+>
+                    formulaExpre afterstep3imp <+>
                     text "\n\nStep 4, the clause set is:\n" <+>
                     text "{" <+> clausesPrint afterStep4 <+> text "}\n"
                 where afterStep1 = step1 formula
                       afterStep2 = step2 afterStep1
-                      afterStep3 = iffSplit formula
+                      afterstep3imp = iffSplit formula
                       afterStep4 = step4 (iffSplit formula)
 
 
@@ -87,34 +88,34 @@ cnfAlgo formula = step4 (iffSplit formula)
 
 
 -- | CNF iffSplit: eliminate iff ↔ from the input formula to implication,
--- |  then implement step1 to step3 for each implication.
+-- |  then implement step1 to step3imp for each implication.
 --
 -- Example:
 --
 -- > $ iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 iffSplit :: LogicFormula -> LogicFormula
-iffSplit (Neg (f1 :<-> f2)) = step3 (step2 (Neg (step1Each (iffSplit f1 :-> iffSplit f2)))) :/\ step3 (step2 (Neg (step1Each (iffSplit f2 :-> iffSplit f1))))
-iffSplit (f1 :<-> f2) = step3 (step2 (step1Each (iffSplit f1 :-> iffSplit f2))) :/\ step3 (step2 (step1Each (iffSplit f2 :-> iffSplit f1)))
-iffSplit f = step3 (step2 (step1Each f))    -- iffSplit (f1 :-> f2) = [[step1Each (f1 :-> f2)]]
+iffSplit (Neg (f1 :<-> f2)) = step2 ((Neg (step3imp (step2 (step1imp (iffSplit f1 :-> iffSplit f2))))) :/\ (Neg (step3imp (step2 (step1imp (iffSplit f2 :-> iffSplit f1))))))
+iffSplit (f1 :<-> f2) = step3imp (step2 (step1imp (iffSplit f1 :-> iffSplit f2))) :/\ step3imp (step2 (step1imp (iffSplit f2 :-> iffSplit f1)))
+iffSplit f = step3imp (step2 (step1imp f))    -- iffSplit (f1 :-> f2) = [[step1imp (f1 :-> f2)]]
 
 
--- | CNF step1Each: eliminate iff ↔ and implication → from the input formula.
+-- | CNF step1imp: eliminate iff ↔ and implication → from the input formula.
 --
 -- Example:
 --
--- > $ step1Each ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+-- > $ step1imp ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
 -- > Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
--- > $ step1Each ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+-- > $ step1imp ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 -- > (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))
-step1Each :: LogicFormula -> LogicFormula
-step1Each (f1 :-> f2) = step1Each (Neg f1) :\/ step1Each f2
-step1Each (Neg f) = Neg (step1Each f)
-step1Each (f1 :/\ f2) = step1Each f1 :/\ step1Each f2
-step1Each (f1 :\/ f2) = step1Each f1 :\/ step1Each f2
-step1Each Bottom = Bottom
-step1Each Top = Top
-step1Each f = f
+step1imp :: LogicFormula -> LogicFormula
+step1imp (f1 :-> f2) = step1imp (Neg f1) :\/ step1imp f2
+step1imp (Neg f) = Neg (step1imp f)
+step1imp (f1 :/\ f2) = step1imp f1 :/\ step1imp f2
+step1imp (f1 :\/ f2) = step1imp f1 :\/ step1imp f2
+step1imp Bottom = Bottom
+step1imp Top = Top
+step1imp f = f
 
 
 -- | CNF step1: eliminate iff ↔ and implication → from the input formula.
@@ -135,6 +136,7 @@ step1 (f1 :\/ f2) = (step1 f1 :\/ step1 f2)
 step1 Bottom = Bottom
 step1 Top = Top
 step1 f = f
+
 
 -- | CNF step2: push negations ¬ towards literals.
 --
@@ -161,25 +163,39 @@ step2 (_ :<-> _) = error "There should have no <-> notation, make sure the fomul
 step2 f = f
 
 
--- | CNF step3: distribute disjunctions ∨ into conjunctions ∧.
+-- | CNF step3imp: distribute disjunctions ∨ into conjunctions ∧.
+-- | Do not accept the original formula involving iff ↔.
 --
 -- Example:
 --
--- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r'))
+-- > $ step3imp ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r'))
 -- > (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 -- >
--- > $ step3 (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'q' :\/ Var 'r') :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))
+-- > $ step3imp (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'q' :\/ Var 'r') :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))
 -- > (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :\/ Var 'r')) :/\ (((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Neg (Var 'p') :/\ Neg (Var 'q')))
 -- >
--- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
+-- > $ step3imp ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
-step3 :: LogicFormula -> LogicFormula
-step3 (x :\/ (y :/\ z)) = (step3 x :\/ step3 y) :/\ (step3 x :\/ step3 z)
-step3 ((x :/\ y) :\/ z) = (step3 x :\/ step3 z) :/\ (step3 y :\/ step3 z)
-step3 (Neg f) = Neg (step3 f)
-step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1Each."
-step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1Each."
-step3 f = f
+step3imp :: LogicFormula -> LogicFormula
+step3imp (x :\/ (y :/\ z)) = (step3imp x :\/ step3imp y) :/\ (step3imp x :\/ step3imp z)
+step3imp ((x :/\ y) :\/ z) = (step3imp x :\/ step3imp z) :/\ (step3imp y :\/ step3imp z)
+step3imp (Neg f) = Neg (step3imp f)
+step3imp (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1imp."
+step3imp (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1imp."
+step3imp f = f
+
+
+step4Print :: LogicFormula -> Doc
+step4Print clauses =    text "\n" <+>
+                        clausesPrint clauseSets <+>
+                        text "\n" <+>
+                        clausesPrint elimLiteral <+>
+                        text "\n" <+>
+                        clausesPrint delDubli
+                    where   clauseSets = sortOn length (toClauseSets clauses)
+                            elimLiteral = map step4elim clauseSets
+                            delDubli = step4delsub (sortOn length elimLiteral)
+
 
 
 -- | CNF step4: simplify resulting CNF-formulas by removing duplicate literals.
@@ -192,7 +208,8 @@ step3 f = f
 -- > $ step4 (((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
-step4 list = step4delsub (sortOn length (map step4elim (toClauseSets list)))   -- ^ sortOn: make the shortest clause in the front
+step4 list = step4delsub (sortOn length (map step4elim clauseSets))   -- ^ sortOn: make the shortest clause in the front
+    where clauseSets = sortOn length (toClauseSets list)
 
 -- | The occurrence of duplicate variables was considered.
 --
@@ -227,27 +244,71 @@ step4elim (x:xs)
 -- Example:
 --
 -- > $ toClauseSets ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
--- toClauseSets :: LogicFormula -> [[String]]
--- toClauseSets formula =  splitDisj (splitConj formula)
-
-
--- splitConj :: LogicFormula -> [String]
--- splitConj formula = splitOn ":/\\" (show formula)
-
--- splitDisj :: [String] -> [[String]]
--- splitDisj [] = []
--- splitDisj (x:xs) = [splitOn ":\\/" x] ++ splitDisj xs
-
+-- > [[Neg (Var 'p'),Var 'p',Var 'q',Var 'r'],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r']]
 toClauseSets :: LogicFormula -> [[LogicFormula]]
-toClauseSets formula = map splitDisj (splitConj formula)
+toClauseSets formula 
+    | length (splitConj formula) == 1 = doubletoClauseSets (map splitDisj (splitConj formula))
+    | otherwise = doubletoClauseSets (map splitDisj (splitConj formula))
 
 
 splitConj :: LogicFormula -> [LogicFormula]
 splitConj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
-splitConj ((f1 :/\ f2) :\/ other) = splitConj (f1 :/\ f2) ++ splitConj other
-splitConj (other :\/ (f1 :/\ f2)) = splitConj other ++ splitConj (f1 :/\ f2)
+-- splitConj (f1 :\/ f2) = splitDisj f1 ++ splitDisj f2
 splitConj formula = [formula]
+
 
 splitDisj :: LogicFormula -> [LogicFormula]
 splitDisj (f1 :\/ f2) = splitDisj f1 ++ splitDisj f2
+splitDisj (f1 :/\ f2) = splitConj f1 ++ splitConj f2
 splitDisj formula = [formula]
+
+doubletoClauseSets :: [[LogicFormula]] -> [[LogicFormula]]
+doubletoClauseSets [] = []
+doubletoClauseSets (x:xs) = doubleSplitConj x ++ doubletoClauseSets xs
+
+doubleSplitConj :: [LogicFormula] -> [[LogicFormula]]
+doubleSplitConj [f1 :/\ f2] = doubleSplitConj [f1] ++ doubleSplitConj [f2]
+doubleSplitConj x = [x]
+
+
+stringFilter :: LogicFormula -> String
+stringFilter formula = filter (\x -> x /= '(' && x /= ')') (show formula)
+
+
+-- ghci> cnfPrint (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
+
+-- ===Apply CNF algorithm to a formula===
+
+--  The given formula is:
+--  (¬ ((p ∨ q) ↔ (q ∨ r))) 
+
+-- Step 1:
+--  (¬ (((¬ (p ∨ q)) ∨ (q ∨ r)) ∧ ((¬ (q ∨ r)) ∨ (p ∨ q)))) 
+
+-- Step 2:
+--  (((p ∨ q) ∧ ((¬ q) ∧ (¬ r))) ∨ ((q ∨ r) ∧ ((¬ p) ∧ (¬ q)))) 
+
+-- Step 3:
+--  (((p ∧ ((¬ q) ∧ (¬ r))) ∨ (q ∧ ((¬ q) ∧ (¬ r)))) ∨ ((q ∧ ((¬ p) ∧ (¬ q))) ∨ (r ∧ ((¬ p) ∧ (¬ q))))) 
+
+-- Step 4, the clause set is:
+--  { { (p ∧ ((¬ q) ∧ (¬ r))) , (q ∧ ((¬ q) ∧ (¬ r))) , (q ∧ ((¬ p) ∧ (¬ q))) , (r ∧ ((¬ p) ∧ (¬ q))) } }
+
+-- ghci> cnfPrint ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+
+-- ===Apply CNF algorithm to a formula===
+
+--  The given formula is:
+--  ((p ∨ q) ↔ (q ∨ r)) 
+
+-- Step 1:
+--  (((¬ (p ∨ q)) ∨ (q ∨ r)) ∧ ((¬ (q ∨ r)) ∨ (p ∨ q))) 
+
+-- Step 2:
+--  ((((¬ p) ∧ (¬ q)) ∨ (q ∨ r)) ∧ (((¬ q) ∧ (¬ r)) ∨ (p ∨ q))) 
+
+-- Step 3:
+--  ((((¬ p) ∨ (q ∨ r)) ∧ ((¬ q) ∨ (q ∨ r))) ∧ (((¬ q) ∨ (p ∨ q)) ∧ ((¬ r) ∨ (p ∨ q)))) 
+
+-- Step 4, the clause set is:
+--  { { (¬ p) , q , r },  { (¬ r) , p , q } }
