@@ -41,6 +41,9 @@ cnfTests = describe "CNF Tests" $ do
 
         iffSplit (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))) `shouldBe` 
          ((Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :/\ (Neg (Var 'q') :/\ Neg (Var 'r')))) :/\ ((Var 'q' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))) :\/ (Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))
+        -- week7 Exercise Question 7.2
+        iffSplit (Neg ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :-> ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe` 
+         (Var 'p' :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'p') :/\ Neg (Var 'q')) :/\ Neg (Var 'r'))
 
     it "step1imp" $ do
         step1imp ((Top :\/ Var 'q') :-> (Var 'q' :\/ Bottom)) `shouldBe` 
@@ -50,7 +53,7 @@ cnfTests = describe "CNF Tests" $ do
         -- week6 lecture
         step1 ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe`
          Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
-        -- week7 exercise
+        -- week7 Exercise Question 7.2
         step1 ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :-> ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
          Neg (Var 'p' :\/ (Var 'q' :\/ Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')
         -- (((p ∨ q) ↔ q) ∨ r)
@@ -61,7 +64,7 @@ cnfTests = describe "CNF Tests" $ do
     it "step2: push negations towards literals" $ do
         step2 (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')
-        -- week7 exercise
+        -- week7 Exercise Question 7.2
         step2 (Neg (Var 'p' :\/ (Var 'q' :\/ Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')
         -- (((p ∨ q) ↔ q) ∨ r)
@@ -83,9 +86,9 @@ cnfTests = describe "CNF Tests" $ do
 
         step3imp ((Var 'q' :\/ Var 'r') :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe`
          ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'p')) :/\ ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'q'))
-        -- week7 exercise
+        -- week7 Exercise Question 7.2
         step3imp ((Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
-         (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))
+         (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ (Neg (Var 'r') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
 
         step3imp ((Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ ((Var 'p' :\/ Var 'q') :/\ Bottom :/\ Top)) `shouldBe`
          (Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ (((Var 'p' :\/ Var 'q') :/\ Bottom) :/\ Top)
@@ -122,7 +125,7 @@ cnfTests = describe "CNF Tests" $ do
     it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do
         step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) `shouldBe`
          [[Neg (Var 'p'),Var 'q',Var 'r']]
-        -- week7 exercise
+        -- week7 Exercise Question 7.2
         step4 ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
          ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
          [[Neg (Var 'q')],[Var 'q',Var 'r'],[Var 'p',Var 'q']]
@@ -135,7 +138,6 @@ cnfTests = describe "CNF Tests" $ do
         toClauseSets ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
          ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe` 
          [[Neg (Var 'p'),Var 'p',Var 'q',Var 'r'],[Neg (Var 'q')],[Neg (Var 'r'),Var 'p',Var 'q',Var 'r']]
-
-        --toClauseSets ((((Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :/\ (Neg (Var 'q') :/\ Neg (Var 'r')))) :/\ ((Var 'q' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))) :\/ (Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q')))))) `shouldBe`
-         --[[Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r')),Var 'q' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))],[Var 'q' :/\ (Neg (Var 'p') :/\ Neg (Var 'q')),Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))]]
-        
+        -- week7 Exercise Question 7.2
+        toClauseSets ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'p') :/\ Neg (Var 'q')) :/\ Neg (Var 'r'))) `shouldBe`
+         [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')]]

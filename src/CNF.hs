@@ -174,8 +174,8 @@ step2 f = f
 -- > $ step3imp ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 step3imp :: LogicFormula -> LogicFormula
-step3imp (x :\/ (y :/\ z)) = (step3imp x :\/ step3imp y) :/\ (step3imp x :\/ step3imp z)
-step3imp ((x :/\ y) :\/ z) = (step3imp x :\/ step3imp z) :/\ (step3imp y :\/ step3imp z)
+step3imp (x :\/ (y :/\ z)) = step3imp (step3imp(step3imp x :\/ step3imp y) :/\ step3imp(step3imp x :\/ step3imp z))
+step3imp ((x :/\ y) :\/ z) = step3imp (step3imp(step3imp x :\/ step3imp z) :/\ step3imp(step3imp y :\/ step3imp z))
 step3imp (Neg f) = Neg (step3imp f)
 step3imp (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1imp."
 step3imp (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1imp."

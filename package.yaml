@@ -68,7 +68,7 @@ tests:
     - CNFSpec
     - CommonSpec
     - DPLLSpec
-    - PropResoSpec
+    - ResolutionSpec
     - TruthTableSpec
     ghc-options:
     - -threaded

@@ -90,7 +90,6 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF form
                 where   negFormula = Neg formula
 
 
-
 -- | Print out the result of DPLL algorithm to clause sets
 -- Example:
 --
@@ -226,7 +225,7 @@ unitNegClausePrint clauses@(x:xs)
 -- > [[]]
 unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitNegClause [] = [[]]
-unitNegClause clauses@(x:xs) 
+unitNegClause clauses@(x:xs)
         | null xs = [x]    -- ^ The case of clause set Ø
         | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
 

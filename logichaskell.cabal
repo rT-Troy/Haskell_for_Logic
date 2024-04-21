@@ -33,7 +33,7 @@ library
     CNF
     Common
     DPLL
-    PropResolution
+    Resolution
     TruthTable
   other-modules:
     Paths_logichaskell
@@ -79,7 +79,7 @@ test-suite logichaskell-test
     CNFSpec
     CommonSpec
     DPLLSpec
-    PropResoSpec
+    ResolutionSpec
     TruthTableSpec
   hs-source-dirs:
     test
