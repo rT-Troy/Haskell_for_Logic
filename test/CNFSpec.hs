@@ -60,6 +60,8 @@ cnfTests = describe "CNF Tests" $ do
         step1 ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')) `shouldBe`
          (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))
 
+        step1 ((Var 'p' :\/ Bottom) :-> (Top :\/ Var 'p')) `shouldBe` 
+         Neg (Var 'p' :\/ Bottom) :\/ (Top :\/ Var 'p')
 
     it "step2: push negations towards literals" $ do
         step2 (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
@@ -141,3 +143,13 @@ cnfTests = describe "CNF Tests" $ do
         -- week7 Exercise Question 7.2
         toClauseSets ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'p') :/\ Neg (Var 'q')) :/\ Neg (Var 'r'))) `shouldBe`
          [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')]]
+
+    it "stringFilter" $ do
+        stringFilter ((Top :-> Var 'q') :<-> (Var 'q' :\/ Bottom)) `shouldBe` 
+         "Top :-> Var 'q' :<-> Var 'q' :\\/ Bottom"
+
+    it "strToLogicFormula" $ do
+        strToLogicFormula "Var 'p'" `shouldBe` Var 'p'
+        strToLogicFormula "Neg (Var 'p')" `shouldBe` Neg (Var 'p')
+        strToLogicFormula "Neg (Var 'p') :/\\ Top" `shouldBe` (Neg (Var 'p') :/\ Top)
+        strToLogicFormula (show (Var 'p')) `shouldBe` Var 'p'

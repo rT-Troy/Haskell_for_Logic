@@ -24,6 +24,9 @@ module CNF  ( cnfPrint
             , toClauseSets
             , splitConj
             , splitDisj
+            , stringFilter
+            , strToLogicFormula
+            , toClausesString
   ) where
 import Data.List ( sortOn )
 import Text.PrettyPrint ( Doc, (<+>), text )
@@ -92,10 +95,11 @@ cnfAlgo formula = step4 (iffSplit formula)
 -- > $ iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 iffSplit :: LogicFormula -> LogicFormula
-iffSplit (Neg (f1 :<-> f2)) = step2 ((Neg (step3imp (step2 (step1imp (iffSplit f1 :-> iffSplit f2))))) :/\ (Neg (step3imp (step2 (step1imp (iffSplit f2 :-> iffSplit f1))))))
-iffSplit (f1 :<-> f2) = step3imp (step2 (step1imp (iffSplit f1 :-> iffSplit f2))) :/\ step3imp (step2 (step1imp (iffSplit f2 :-> iffSplit f1)))
-iffSplit f = step3imp (step2 (step1imp f))    -- iffSplit (f1 :-> f2) = [[step1imp (f1 :-> f2)]]
-
+iffSplit (Neg (f1 :<-> f2)) = iffSplit (step2 ((revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))))) :/\ (revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f2 :-> iffSplit f1))))))))
+iffSplit (f1 :<-> f2) = iffSplit (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))) :/\ step3imp (step2 (iffSplit(step1imp (iffSplit f2 :-> iffSplit f1)))))
+iffSplit (f1 :-> f2) = step3imp (step2 (iffSplit (step1imp (f1 :-> f2))))
+iffSplit (Neg (f1 :-> f2)) = step3imp (step2 (iffSplit (step1imp (revNeg (f1 :-> f2)))))
+iffSplit f = f
 
 -- | CNF step1imp: eliminate iff ↔ and implication → from the input formula.
 --
@@ -125,9 +129,9 @@ step1imp f = f
 -- > $ step1 (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
 -- > Neg ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 step1 :: LogicFormula -> LogicFormula
-step1 (f1 :-> f2) = (step1 (Neg f1)) :\/ (step1 f2)
+step1 (f1 :-> f2) = (step1 (revNeg f1)) :\/ (step1 f2)
 step1 (f1 :<-> f2) = (step1 (step1 f1 :-> step1 f2)) :/\ (step1 (step1 f2 :-> step1 f1))
-step1 (Neg f) = (Neg (step1 f))
+step1 (Neg f) = (revNeg (step1 f))
 step1 (f1 :/\ f2) = (step1 f1 :/\ step1 f2)
 step1 (f1 :\/ f2) = (step1 f1 :\/ step1 f2)
 step1 Bottom = Bottom
@@ -176,7 +180,7 @@ step2 f = f
 step3imp :: LogicFormula -> LogicFormula
 step3imp (x :\/ (y :/\ z)) = step3imp (step3imp(step3imp x :\/ step3imp y) :/\ step3imp(step3imp x :\/ step3imp z))
 step3imp ((x :/\ y) :\/ z) = step3imp (step3imp(step3imp x :\/ step3imp z) :/\ step3imp(step3imp y :\/ step3imp z))
-step3imp (Neg f) = Neg (step3imp f)
+step3imp (Neg f) = revNeg (step3imp f)
 step3imp (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1imp."
 step3imp (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1imp."
 step3imp f = f

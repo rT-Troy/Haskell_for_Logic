@@ -37,6 +37,12 @@ commonTests = describe "Common Tests" $ do
 
         show (Var 'q') `shouldBe` "Var 'q'"
 
+    it "LogicFormula: Read" $ do
+        (read "Var 'p'" :: LogicFormula) `shouldBe` Var 'p'
+        (read "Neg (Var 'p')" :: LogicFormula) `shouldBe` Neg (Var 'p')
+        (read "Neg (Var 'p') :/\\ Top" :: LogicFormula) `shouldBe` (Neg (Var 'p') :/\ Top)
+        (read (show (Var 'p')) :: LogicFormula) `shouldBe` Var 'p'
+
 
     it "showBool: convert BoolValue to String" $ do
         showBool T `shouldBe` "T"

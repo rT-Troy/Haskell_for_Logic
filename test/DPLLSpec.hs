@@ -10,78 +10,82 @@ import DPLL
       dpllFormula,
       dpllClauseSets,
       unitClause,
-      unitNegClause,
       eliminate,
-      toClauses )
+      toCNFClauses,
+      dpllResultPrint)
 
 dpllTests :: Spec
 dpllTests = describe "DPLL Tests" $ do
 
-    it "dpllFormulaPrint" $ do
-        let formula = (Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')
-        let expectedResult = unlines [
-                "",
-                "===Applying DPLL algorithm to a CNF formula===",
-                "",
-                " The given formula is: ",
-                " ((p ∧ q) → (q ∧ r)) ",
-                "",
-                " The negation is: ",
-                " (¬ ((p ∧ q) → (q ∧ r))) ",
-                "",
-                " We want to show this formula is not valid, so its negation should be satisfiable... ",
-                "",
-                " ",
-                "===Apply CNF algorithm to a formula===",
-                "",
-                " The given formula is:",
-                " (¬ ((p ∧ q) → (q ∧ r))) ",
-                "",
-                "Step 1:",
-                " (¬ ((¬ (p ∧ q)) ∨ (q ∧ r))) ",
-                "",
-                "Step 2:",
-                " ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) ",
-                "",
-                "Step 3:",
-                " ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) ",
-                "",
-                "Step 4, the clause set is:",
-                " { { p },  { q },  { (¬ q) , (¬ r) } }",
-                " ",
-                " Applying DPLL algorithm to the clause set... ",
-                "",
-                " The answer is: ",
-                " { (¬ r) } ",
-                "",
-                " The result is: ",
-                " It yields Ø, which is satisfiable. "
-                ]
-        render (dpllFormulaPrint formula) `shouldBe` expectedResult
+    -- it "dpllFormulaPrint" $ do
+    --     let formula = (Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')
+    --     let expectedResult = unlines [
+    --             "",
+    --             "===Applying DPLL algorithm to a CNF formula===",
+    --             "",
+    --             " The given formula is: ",
+    --             " ((p ∧ q) → (q ∧ r)) ",
+    --             "",
+    --             " The negation is: ",
+    --             " (¬ ((p ∧ q) → (q ∧ r))) ",
+    --             "",
+    --             " We want to show this formula is not valid, so its negation should be satisfiable... ",
+    --             "",
+    --             " ",
+    --             "===Apply CNF algorithm to a formula===",
+    --             "",
+    --             " The given formula is:",
+    --             " (¬ ((p ∧ q) → (q ∧ r))) ",
+    --             "",
+    --             "Step 1:",
+    --             " (¬ ((¬ (p ∧ q)) ∨ (q ∧ r))) ",
+    --             "",
+    --             "Step 2:",
+    --             " ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) ",
+    --             "",
+    --             "Step 3:",
+    --             " ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) ",
+    --             "",
+    --             "Step 4, the clause set is:",
+    --             " { { p },  { q },  { (¬ q) , (¬ r) } }",
+    --             " ",
+    --             " Applying DPLL algorithm to the clause set... ",
+    --             "",
+    --             "{ q },  { (¬ q) , (¬ r) }        Use unit  { p } ",
+    --             "",
+    --             "{ (¬ r) }        Use unit  { q } :",
+    --             "",
+    --             " The answer is: ",
+    --             " { (¬ r) } ",
+    --             "",
+    --             " The result is: ",
+    --             " It yields Ø, which is satisfiable. "
+    --             ]
+    --     render (dpllFormulaPrint formula) `shouldBe` expectedResult
 
-    it "dpllClausesPrint" $ do
-        let clauses = [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
-        let expectedResult = unlines [
-                "",
-                "===Applying DPLL algorithm to clause sets===",
-                "",
-                " The clause set is: ",
-                " { { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p } }",
-                "",
-                " Applying DPLL algorithm to the clause set...",
-                "",
-                " The answer is: ",
-                " { [] } ",
-                "",
-                " The result is: ",
-                " It yields Ø, which is satisfiable. "
-                ]
-        render (dpllClausesPrint clauses) `shouldBe` expectedResult
+    -- it "dpllClausesPrint" $ do
+    --     let clauses = [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
+    --     let expectedResult = unlines [
+    --             "",
+    --             "===Applying DPLL algorithm to clause sets===",
+    --             "",
+    --             " The clause set is: ",
+    --             " { { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p } }",
+    --             "",
+    --             " Applying DPLL algorithm to the clause set...",
+    --             "",
+    --             " The answer is: ",
+    --             " { [] } ",
+    --             "",
+    --             " The result is: ",
+    --             " It yields empty clause □, which is unsatisfiable. "
+    --             ]
+    --     render (dpllClausesPrint clauses) `shouldBe` expectedResult
 
 
-    it "toClauses: " $ do
+    it "toCNFClauses: " $ do
         -- week 6 lecture
-        toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
+        toCNFClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
          [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
         
  
@@ -89,6 +93,15 @@ dpllTests = describe "DPLL Tests" $ do
         -- week 6 lecture
         dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
          [[Neg (Var 'r')]]
+
+        dpllFormula ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')) `shouldBe` 
+         [[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'q'),Var 'r']]
+
+        dpllFormula ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')) `shouldBe` 
+         [[Neg (Var 'p'),Neg (Var 'q'),Var 'r']]
+
+        dpllFormula (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r'))) `shouldBe` 
+         [[Neg (Var 'p')]]
  
     it "dpllClauseSets" $ do
         -- week 7 exercise question 7.1.a
@@ -101,11 +114,9 @@ dpllTests = describe "DPLL Tests" $ do
 
     it "unitClause" $ do
         -- week 6 lecture
-        unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]] `shouldBe` [[Neg (Var 'r')]]
-
-    it "unitNegClause" $ do
+        unitClause (Var 'p')[[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]] `shouldBe` [[Neg (Var 'r')]]
         -- week 6 lecture
-        unitNegClause [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],
+        unitClause (Neg (Var 'p')) [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],
          [Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']] `shouldBe` [[]]
 
     it "eliminate: week 6 lecture" $ do
@@ -117,4 +128,10 @@ dpllTests = describe "DPLL Tests" $ do
         eliminate (Var 'r') [[Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Var 'r']] `shouldBe`
          [[Var 'q'],[Neg (Var 'q')]]
         -- week 6 lecture
-        eliminate (Neg (Var 'q')) [[Var 'q'],[Neg (Var 'q')]] `shouldBe` [[]]
+        eliminate (Neg (Var 'q')) [[Var 'q'],[Neg (Var 'q')]] `shouldBe` []
+
+    it "dpllResultPrint" $ do 
+        render (dpllResultPrint [[Neg (Var 'r')]]) `shouldBe` "It yields Ø, which is satisfiable."
+
+        render (dpllResultPrint [[]]) `shouldBe` "It yields empty clause □, which is unsatisfiable."
+

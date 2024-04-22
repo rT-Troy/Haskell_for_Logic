@@ -16,13 +16,12 @@ module DPLL ( dpllFormulaPrint
             , dpllClauseSets
             , unitClausePrint
             , unitClause
-            , unitNegClausePrint
-            , unitNegClause
             , eliminate
-            , toClauses
+            , toCNFClauses
+            , dpllResultPrint
             ) where
     
-import Data.List ( sortOn )
+import Data.List ( sortOn, nub )
 
 import Common
 import CNF
@@ -82,12 +81,12 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a CNF form
                                 formulaExpre negFormula <+>
                                 text "\n\n We want to show this formula is not valid, so its negation should be satisfiable... \n\n" <+>
                                 cnfPrint negFormula <+>
-                                text "\n Applying DPLL algorithm to the clause set... \n\n" <+>
-                                text "The answer is: \n" <+>
-                                clausesPrint (dpllFormula negFormula) <+>
-                                text "\n\n The result is: \n" <+>
+                                text "\n Applying DPLL algorithm to the clause set... " <+>
+                                dpllElimPrint clauses <+>
+                                text "\n\nThe result is: \n" <+>
                                 dpllResultPrint (dpllFormula negFormula) <+> text "\n"
-                where   negFormula = Neg formula
+                where   negFormula = revNeg formula
+                        clauses = toCNFClauses negFormula
 
 
 -- | Print out the result of DPLL algorithm to clause sets
@@ -112,8 +111,7 @@ dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to clause set
                                 text "The clause set is: \n" <+>
                                 text "{" <+> clausesPrint clauses <+> text "}\n\n" <+>
                                 text "Applying DPLL algorithm to the clause set...\n\n" <+>
-                                text "The answer is: \n" <+>
-                                clausesPrint (dpllClauseSets clauses) <+>
+                                dpllElimPrint clauses <+>
                                 text "\n\n The result is: \n" <+>
                                 dpllResultPrint (dpllClauseSets clauses) <+> text "\n"
 
@@ -128,10 +126,20 @@ dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to clause set
 -- > [[Neg (Var 'r')]]
 dpllFormula :: LogicFormula -> [[LogicFormula]]
 dpllFormula formula 
-        | length (head clauses) == 1 = unitClause clauses
-        | unitClause clauses == unitNegClause clauses = unitClause clauses
-        | otherwise = unitClause clauses ++ unitNegClause clauses
-        where clauses = toClauses formula
+        | length (head clauses) == 1 = unitClause start clauses
+        | otherwise = nub (unitClause start clauses ++ unitClause (revNeg start) clauses)
+        where   clauses = sortOn length (toCNFClauses formula)
+                start = head (head clauses)
+
+
+dpllElimPrint :: [[LogicFormula]] -> Doc
+dpllElimPrint clauses
+        | length (head clauses) == 1 = unitClausePrint start clauses
+        | otherwise =   text "\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
+                        unitClausePrint start clauses <+> 
+                        text "\nIn case of " <+> formulaExpre (revNeg start) <+> text " -> 0: \n" <+>
+                        unitClausePrint (revNeg start) clauses
+        where   start = head (head clauses)
 
 
 -- | Main function 2: Apply DPLL algorithm to clause sets.
@@ -143,10 +151,10 @@ dpllFormula formula
 -- > [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p',Var 'r'],[Var 't',Var 's',Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
 dpllClauseSets :: [[LogicFormula]] -> [[LogicFormula]]
 dpllClauseSets clauseSet 
-        | length (head clauses) == 1 = unitClause clauses
-        | unitClause clauses == unitNegClause clauses = unitClause clauses
-        | otherwise = unitClause clauses ++ unitNegClause clauses
-        where clauses = sortOn length clauseSet
+        | length (head clauses) == 1 = unitClause start clauses
+        | otherwise = nub (unitClause start clauses ++ unitClause (revNeg start) clauses)
+        where   clauses = sortOn length clauseSet
+                start = head (head clauses)
 
 
 -- | Check if the clause sets is satisfiable, and print out the result.
@@ -159,75 +167,58 @@ dpllClauseSets clauseSet
 -- > "It yields Ø, which is satisfiable."
 dpllResultPrint :: [[LogicFormula]] -> Doc
 dpllResultPrint clauseSet
-        | not (null clauseSet) = text "It yields Ø, which is satisfiable."
-        | null clauseSet = text "It yields empty clause □, which is unsatisfiable."
-        | otherwise = error "DPLL result error"
+        | clauseSet == [[]] = text "It yields empty clause □, which is unsatisfiable."
+        | otherwise = text "It yields Ø, which is satisfiable."
 
 
 -- | Non-splitting elimination of each clause if exists a unit clause.
 --
 -- Example:
 --
--- > $ unitClausePrint [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+-- > $ unitClausePrint (Var 'p') [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 -- > [[Neg (Var 'r')]]
 -- >
 -- > $ unitClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > [[]]
-unitClausePrint :: [[LogicFormula]] -> Doc
-unitClausePrint [] = text ""
-unitClausePrint clauses@(x:xs)
-        | null x =      text "\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | null xs =text "\nUse unit" <+> clausesPrint [x] <+> text ": \nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | otherwise =   text "\nUse unit" <+> clausesPrint [x] <+> text ": \n" <+>
-                        clausesPrint sortedClauses <+>
-                        unitClausePrint sortedClauses
-                where sortedClauses = sortOn length (eliminate (head x) clauses)
+unitClausePrint :: LogicFormula -> [[LogicFormula]] -> Doc
+unitClausePrint _ [] = text ""
+unitClausePrint start clauses@(x:xs)
+        | null x =                      text "\n\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | null xs =    text "\n\nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | length x > 1 && not (null xs) = dpllSplitPrint clauses
+        | otherwise =                   text "\n\n" <+> clausesPrint nextClauses <+> 
+                                        text "       Use unit " <+> clausesPrint [x] <+>
+                                        unitClausePrint nextStart nextClauses
+                where   nextStart = head (head nextClauses)
+                        nextClauses =   sortOn length (eliminate start clauses)
+                                        
+checkMoreSplit :: [[LogicFormula]] -> [[LogicFormula]] -> Bool
+checkMoreSplit clauses = unitClause (head (head clauses)) clauses == clauses
+
+dpllSplitPrint :: [[LogicFormula]] -> Doc
+dpllSplitPrint clauses =text "\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
+                        unitClausePrint start clauses <+> 
+                        text "\nIn case of " <+> formulaExpre (revNeg start) <+> text " -> 0: \n" <+>
+                        unitClausePrint (revNeg start) clauses
+        where   start = head (head clauses)
 
 
 -- | Non-splitting elimination of each clause if exists a unit clause.
 --
 -- Example:
 --
--- > $ unitClause [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
+-- > $ unitClause (Var 'p') [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 -- > [[Neg (Var 'r')]]
 -- >
 -- > $ unitClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > [[]]
-unitClause :: [[LogicFormula]] -> [[LogicFormula]]
-unitClause [] = [[]]
-unitClause clauses@(x:xs) 
+unitClause :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
+unitClause _ [] = [[]]
+unitClause start clauses@(x:xs) 
         | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
-        | otherwise = unitClause (sortOn length (eliminate (head x) clauses))
-
-
--- | Splitting in case no unit clause exists, the literal should be negated.
---
--- Example:
---
--- > $ unitNegClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
--- > [[]]
-unitNegClausePrint :: [[LogicFormula]] -> Doc
-unitNegClausePrint [] = text ""
-unitNegClausePrint clauses@(x:xs)
-        | null x =      text "\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | null xs =text "\nUse unit" <+> clausesPrint [x] <+> text ": \nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | otherwise =   text "\nUse unit" <+> clausesPrint [x] <+> text ": \n" <+>
-                        clausesPrint sortedClauses <+>
-                        unitNegClausePrint sortedClauses
-                where sortedClauses = sortOn length (eliminate (revNeg (head x)) clauses)
-
-
--- | Splitting in case no unit clause exists, the literal should be negated.
---
--- Example:
---
--- > $ unitNegClause ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
--- > [[]]
-unitNegClause :: [[LogicFormula]] -> [[LogicFormula]]
-unitNegClause [] = [[]]
-unitNegClause clauses@(x:xs)
-        | null xs = [x]    -- ^ The case of clause set Ø
-        | otherwise = unitNegClause (sortOn length (eliminate (revNeg (head x)) clauses))
+        | otherwise = unitClause nextStart nextClauses
+                where   nextStart = head (head nextClauses)
+                        nextClauses = sortOn length (eliminate start clauses)
 
 
 -- | Eliminate all clauses containing specific literal (x),
@@ -244,7 +235,7 @@ unitNegClause clauses@(x:xs)
 eliminate :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
 eliminate _ [] = []
 eliminate x (y:ys)
-        | x `elem` y = eliminate x ys   -- ^ x: the specific literal, y: the clause
+        | x `elem` y || [revNeg x] == y = eliminate x ys   -- ^ x: the specific literal, y: the clause
         | revNeg x `elem` y = filter (\z -> z /= x && z /= revNeg x) y : eliminate x ys
         | otherwise = y : eliminate x ys
 
@@ -253,10 +244,10 @@ eliminate x (y:ys)
 --
 -- Example:
 --
--- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
+-- > $ toCNFClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')))
 -- > [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 -- >
--- > $ toClauses (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')))
+-- > $ toCNFClauses (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')))
 
-toClauses :: LogicFormula -> [[LogicFormula]]
-toClauses formula = sortOn length (cnfAlgo formula)       -- ^ sortOn: make the shortest clause in the front
+toCNFClauses :: LogicFormula -> [[LogicFormula]]
+toCNFClauses formula = sortOn length (cnfAlgo formula)       -- ^ sortOn: make the shortest clause in the front
