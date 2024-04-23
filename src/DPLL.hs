@@ -133,13 +133,9 @@ dpllFormula formula
 
 
 dpllElimPrint :: [[LogicFormula]] -> Doc
-dpllElimPrint clauses
-        | length (head clauses) == 1 = unitClausePrint start clauses
-        | otherwise =   text "\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
-                        unitClausePrint start clauses <+> 
-                        text "\nIn case of " <+> formulaExpre (revNeg start) <+> text " -> 0: \n" <+>
-                        unitClausePrint (revNeg start) clauses
+dpllElimPrint clauses = unitClausePrint start sortedClauses
         where   start = head (head clauses)
+                sortedClauses = sortOn length clauses
 
 
 -- | Main function 2: Apply DPLL algorithm to clause sets.
@@ -185,15 +181,23 @@ unitClausePrint _ [] = text ""
 unitClausePrint start clauses@(x:xs)
         | null x =                      text "\n\nSo the answer is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
         | null xs =    text "\n\nSo the answer is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | length x > 1 && not (null xs) = dpllSplitPrint clauses
-        | otherwise =                   text "\n\n" <+> clausesPrint nextClauses <+> 
+        | length x > 1 && not (null xs) && checkMoreSplit clauses = 
+                                        text "\n\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
+                                        clausesPrint nextClauses <+> unitClausePrint nextStart nextClauses <+> 
+                                        text "\n\nIn case of " <+> formulaExpre (revNeg start) <+> text " -> 0: \n" <+>
+                                        clausesPrint negNextClauses <+> unitClausePrint (revNeg nextStart) nextClauses
+        | checkMoreSplit clauses =      text "\n\n" <+> clausesPrint nextClauses <+> 
                                         text "       Use unit " <+> clausesPrint [x] <+>
                                         unitClausePrint nextStart nextClauses
+        | otherwise =                   text ""
                 where   nextStart = head (head nextClauses)
                         nextClauses =   sortOn length (eliminate start clauses)
-                                        
-checkMoreSplit :: [[LogicFormula]] -> [[LogicFormula]] -> Bool
-checkMoreSplit clauses = unitClause (head (head clauses)) clauses == clauses
+                        negNextClauses = sortOn length (eliminate (revNeg start) clauses)
+
+
+checkMoreSplit :: [[LogicFormula]] -> Bool
+checkMoreSplit clauses = (unitClause (head (head clauses)) clauses /= clauses) || (unitClause (revNeg (head (head clauses))) clauses /= clauses)
+
 
 dpllSplitPrint :: [[LogicFormula]] -> Doc
 dpllSplitPrint clauses =text "\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
@@ -215,6 +219,7 @@ dpllSplitPrint clauses =text "\nIn case of " <+> formulaExpre start <+> text " -
 unitClause :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
 unitClause _ [] = [[]]
 unitClause start clauses@(x:xs) 
+        | null x = []    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
         | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
         | otherwise = unitClause nextStart nextClauses
                 where   nextStart = head (head nextClauses)

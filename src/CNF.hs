@@ -97,8 +97,8 @@ cnfAlgo formula = step4 (iffSplit formula)
 iffSplit :: LogicFormula -> LogicFormula
 iffSplit (Neg (f1 :<-> f2)) = iffSplit (step2 ((revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))))) :/\ (revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f2 :-> iffSplit f1))))))))
 iffSplit (f1 :<-> f2) = iffSplit (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))) :/\ step3imp (step2 (iffSplit(step1imp (iffSplit f2 :-> iffSplit f1)))))
-iffSplit (f1 :-> f2) = step3imp (step2 (iffSplit (step1imp (f1 :-> f2))))
-iffSplit (Neg (f1 :-> f2)) = step3imp (step2 (iffSplit (step1imp (revNeg (f1 :-> f2)))))
+iffSplit (f1 :-> f2) = iffSplit (step3imp (step2 (iffSplit (step1imp (f1 :-> f2)))))
+iffSplit (Neg (f1 :-> f2)) = iffSplit (step3imp (step2 (iffSplit (step1imp (revNeg (f1 :-> f2))))))
 iffSplit f = f
 
 -- | CNF step1imp: eliminate iff ↔ and implication → from the input formula.
