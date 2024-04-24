@@ -71,7 +71,7 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                 where afterStep1 = step1 formula
                       afterStep2 = step2 afterStep1
                       afterstep3imp = iffSplit formula
-                      afterStep4 = step4 (iffSplit formula)
+                      afterStep4 = cnfAlgo formula
 
 
 -- | Implementing CNF algorithm following the step 1 to step 4.

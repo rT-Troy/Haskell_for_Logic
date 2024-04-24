@@ -6,11 +6,12 @@ import Resolution
 
 resolutionTests :: Spec
 resolutionTests = describe "PropResolution Tests" $ do
-    it "resolution: Implementing propositional resolution" $ do
-        resolution [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r'] `shouldBe`
-         [Var 'p',Var 'q',Neg (Var 's')]
-    it "resolution: Implementing propositional resolution for empty clause" $ do
-        resolution [Var 'p'] [Neg (Var 'p')] `shouldBe` []
-    it "resoElim: Eliminating the tautological literals in a combined literal list of 2 clauses" $ do
-        resoElim [Var 'p', Var 'q', Neg (Var 'r'), Neg (Var 's'), Var 'r'] `shouldBe`
-         [Var 'p',Var 'q',Neg (Var 's')]
+
+    it "validChecker" $ do
+        validChecker [[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r'],
+         [Var 'q',Var 'r'],[Var 'p',Var 'r'],[Var 'r'],[Var 'p',Var 'q'],[Var 'q'],[Var 'p'],[]] `shouldBe` True
+
+        validChecker [[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r'],
+         [Var 'q',Var 'r'],[Var 'p',Var 'r'],[Var 'r'],[Var 'p',Var 'q'],[Var 'q'],[Var 'p']] `shouldBe` False
+
+    
