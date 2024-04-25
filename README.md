@@ -6,6 +6,15 @@
 
 ### Testing
 
+
+[Calculator](https://www.wolframalpha.com/)
+```
+and  or  implies  iff 
+convert (A implies (B implies C)) to CNF
+```
+
+https://www.erpelstolz.at/gateway/formular-uk-zentral.html
+
 #### Testing by stack
 ```
 stack test

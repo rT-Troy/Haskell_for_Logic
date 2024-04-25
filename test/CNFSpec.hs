@@ -8,6 +8,7 @@ import CNF
 
 cnfTests :: Spec
 cnfTests = describe "CNF Tests" $ do
+    -- week6 lecture
     it "cnfPrint: convert a formula to CNF" $ do
         let formula = (Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')
         let expectedResult = unlines [
@@ -31,10 +32,22 @@ cnfTests = describe "CNF Tests" $ do
                 ]
         render (cnfPrint formula) `shouldBe` expectedResult
 
-    it "iffSplit" $ do
-        iffSplit (Neg ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))) `shouldBe` 
-         (Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))
 
+    it "cnfAlgo: convert a formula to CNF" $ do
+        -- week6 lecture
+        cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe` [[Neg (Var 'p'),Var 'q',Var 'r']]
+        -- not sure if this is correct  https://www.erpelstolz.at/cgi-bin/cgi-form?key=00002f02
+        cnfAlgo (Neg ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))) `shouldBe` [[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q']]
+        -- ((p → q) ↔ (q → p))  https://www.erpelstolz.at/cgi-bin/cgi-form?key=00000293
+        cnfAlgo ((Var 'p' :-> Var 'q') :<-> (Var 'q' :-> Var 'p')) `shouldBe` [[Neg (Var 'q'),Var 'p'],[Neg (Var 'p'),Var 'q']]
+        cnfAlgo (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))) `shouldBe` [[Neg (Var 'r')],[Neg (Var 'p')],[Neg (Var 'q')],[Var 'p',Var 'q'],[Var 'q',Var 'r']]
+
+
+    it "iffSplit" $ do
+        -- week6 lecture
+        iffSplit ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe` 
+         (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
+        -- https://www.erpelstolz.at/cgi-bin/cgi-form?key=00005e0d
         iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')) `shouldBe` 
          ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\
          ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
@@ -104,11 +117,7 @@ cnfTests = describe "CNF Tests" $ do
         evaluate (step3imp (Var 'p' :<-> Var 'q')) `shouldThrow`
          errorCall "There should have no <-> notation, make sure the fomula has been processed by step1imp."
 
-    it "cnfAlgo: convert a formula to CNF" $ do
-        cnfAlgo ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r')) `shouldBe` [[Neg (Var 'p'),Var 'q',Var 'r']]
 
-        -- cnfAlgo ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :-> ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
-        --  [[Var 'p'],[Var 'q',Var 'r']]
 
     it "step4delsub: remove duplicate variables" $ do
         step4delsub [[Var 'r'],[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe`

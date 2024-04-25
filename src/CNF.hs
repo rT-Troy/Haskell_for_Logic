@@ -28,7 +28,7 @@ module CNF  ( cnfPrint
             , strToLogicFormula
             , toClausesString
   ) where
-import Data.List ( sortOn )
+import Data.List ( sortOn, nub )
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Data.List.Split ( splitOn )
 import Common
@@ -95,10 +95,10 @@ cnfAlgo formula = step4 (iffSplit formula)
 -- > $ iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 iffSplit :: LogicFormula -> LogicFormula
-iffSplit (Neg (f1 :<-> f2)) = iffSplit (step2 ((revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))))) :/\ (revNeg (step3imp (step2 (iffSplit (step1imp (iffSplit f2 :-> iffSplit f1))))))))
+iffSplit (Neg (f1 :<-> f2)) = iffSplit (step2 (step3imp (step2 (iffSplit (revNeg (step1imp (iffSplit f1 :-> iffSplit f2))))))) :/\ iffSplit (step2 (step3imp (step2 (iffSplit (revNeg (step1imp (iffSplit f2 :-> iffSplit f1)))))))
+iffSplit (Neg (f1 :-> f2)) = iffSplit (step3imp (step2 (iffSplit (revNeg (step1imp (f1 :-> f2))))))
 iffSplit (f1 :<-> f2) = iffSplit (step3imp (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))) :/\ step3imp (step2 (iffSplit(step1imp (iffSplit f2 :-> iffSplit f1)))))
 iffSplit (f1 :-> f2) = iffSplit (step3imp (step2 (iffSplit (step1imp (f1 :-> f2)))))
-iffSplit (Neg (f1 :-> f2)) = iffSplit (step3imp (step2 (iffSplit (step1imp (revNeg (f1 :-> f2))))))
 iffSplit f = f
 
 -- | CNF step1imp: eliminate iff ↔ and implication → from the input formula.
@@ -215,16 +215,17 @@ step4delsub (x:xs)
           isSubsetOf a b = all (\y -> y `elem` b) a
 
 
--- | CNF step4: simplify resulting CNF-formulas by eliminating duplicate literals in a clause.
+-- | Removing the duplicate literals, and complementary literals such as p and ¬p in the same clause.
 --
 -- Example:
 --
--- > $ step4elim ([Neg (Var 'q'),Var 'q',Var 'r'])
+-- > $ step4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r'])
 -- > [Var 'r']
 step4elim :: [LogicFormula] -> [LogicFormula]
 step4elim [] = []
-step4elim (x:xs)
-    | revNeg x `elem` xs = step4elim (filter (\y -> y /= x && y /= revNeg x) xs)
+step4elim literals@(x:xs)
+    | revNeg x `elem` xs = step4elim (filter (\y -> y /= revNeg x && y /= x) literals)
+    | x `elem` xs = step4elim (nub literals)
     | otherwise = x : step4elim xs
 
 
