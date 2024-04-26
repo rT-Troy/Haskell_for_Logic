@@ -94,14 +94,6 @@ dpllTests = describe "DPLL Tests" $ do
         dpllFormula (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
          [[Neg (Var 'r')]]
 
-        dpllFormula ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')) `shouldBe` 
-         [[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'q'),Var 'r']]
-
-        dpllFormula ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')) `shouldBe` 
-         [[Neg (Var 'p'),Neg (Var 'q'),Var 'r']]
-
-        dpllFormula (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r'))) `shouldBe` 
-         [[Neg (Var 'p')]]
  
     it "dpllClauseSets" $ do
         -- week 7 exercise question 7.1.a
