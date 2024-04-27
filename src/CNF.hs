@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -Wno-incomplete-patterns #-}
 {-|
 Module      : CNF
 Description : Implementing Conjunctive Normal Form (CNF) algorithm and DPLL algorithm using Haskell functions
@@ -11,21 +11,9 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module CNF  ( cnfPrint
-            , cnfAlgo
-            , step1
-            , step2
-            , step3
-            , step4
-            , step4delsub
-            , step4elim
-            , toClauseSets
-            , splitConj
-            , splitDisj
-            , stringFilter
-            , strToLogicFormula
-            , toClausesString
-  ) where
+module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauseSets, strToLogicFormula,
+              step4delsub, step4Cpmtr, checkComplementarys, checkComplementary, 
+              removeComplementary, step4elim, stringFilter ) where
 import Data.List ( sortOn, nub)
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Data.List.Split ( splitOn )
@@ -129,13 +117,13 @@ cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
 -- > $ step1 (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
 -- > Neg ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q')))
 step1 :: LogicFormula -> LogicFormula
-step1 (f1 :<-> f2) =  ((step1 (step1 f1 :-> step1 f2)) :/\ (step1 (step1 f2 :-> step1 f1)))
-step1 (f1 :-> f2) =  ((step1 (revNeg f1)) :\/ (step1 f2))
-step1 (Neg f) =  (revNeg (step1 f))
+step1 (f1 :<-> f2) =  step1 (step1 f1 :-> step1 f2) :/\ step1 (step1 f2 :-> step1 f1)
+step1 (f1 :-> f2) =  step1 (revNeg f1) :\/ step1 f2
+step1 (Neg f) =  revNeg (step1 f)
 step1 (f1 :/\ f2)
     | f1 == revNeg f2 = Bottom
-    | otherwise =  (step1 f1 :/\ step1 f2)
-step1 (f1 :\/ f2) =  (step1 f1 :\/ step1 f2)
+    | otherwise =  step1 f1 :/\ step1 f2
+step1 (f1 :\/ f2) =  step1 f1 :\/ step1 f2
 step1 Bottom = Bottom
 step1 Top = Top
 step1 f = f
@@ -165,8 +153,8 @@ step2 (f1 :\/ f2) = step2 f1 :\/ step2 f2
 step2 (Neg Bottom) = Top
 step2 (Neg Top) = Bottom
 step2 (Neg f) = Neg (step2 f)
-step2 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1."
-step2 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1."
+step2 (_ :-> _) = error "Error: '->' notation detected. Ensure the formula has been processed by 'step1'."
+step2 (_ :<-> _) = error "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
 step2 f = f
 
 
@@ -189,8 +177,8 @@ step3 ((x :/\ y) :\/ z) = step3 (step3 (step3 (step3 x :\/ step3 z) :/\ step3 (s
 step3 (x :\/ y) = step3 x :\/ step3 y
 step3 (x :/\ y) = step3 x :/\ step3 y
 step3 (Neg f) = revNeg (step3 f)
-step3 (_ :-> _) = error "There should have no -> notation, make sure the fomula has been processed by step1imp."
-step3 (_ :<-> _) = error "There should have no <-> notation, make sure the fomula has been processed by step1imp."
+step3 (_ :-> _) = error "Error: '->' notation detected. Ensure the formula has been processed by 'step1'."
+step3 (_ :<-> _) = error "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
 step3 f = f
 
 
@@ -216,9 +204,9 @@ step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn lengt
 step4delsub ::  [[LogicFormula]] -> [[LogicFormula]]
 step4delsub [] = []
 step4delsub clauses@(x:xs)
-    | clauses == [[Top]] = [[Top]]  -- only one clause {T}
-    | Top `elem` x = step4delsub xs -- p ∨ T = T, p ∧ T = p, T is in the clause set, remove the entire clause
-    | [Bottom] `elem` clauses = [[Bottom]]  -- p ∧ ⊥ = ⊥
+    | clauses == [[Top]] = [[Top]]  -- only one clause {⊤}
+    | Bottom `elem` x = error "Error: 'Bottom' notation detected. Ensure the formula has been processed by 'step4elim'."  -- φ ∧ ⊥ = ⊥
+    | Top `elem` x = step4delsub xs -- φ ∨ ⊤ = ⊤, φ ∧ ⊤ = φ, T is in the clause set, remove the entire clause
     | any (\y -> all (`elem` y) x) xs = step4delsub xs
     | otherwise = x : step4delsub xs
 
@@ -265,9 +253,8 @@ removeComplementary x (y:ys)
 step4elim :: [LogicFormula] -> [LogicFormula]
 step4elim [] = []
 step4elim literals@(x:xs)
-    | Top `elem` literals = [Top]  -- ^ p ∨ T = T
-    | Bottom `elem` literals = step4elim (filter (/= Bottom) literals)  -- ^ p ∨ ⊥ = p
-    | revNeg x `elem` xs = step4elim (Top : filter (\y -> y /= revNeg x && y /= x) literals)  -- ^ p ∨ ¬ p = T, remove duplicate literals
+    | Top `elem` literals || revNeg x `elem` xs = [Top]  -- ^ p ∨ ¬ p = ⊤, φ ∨ ⊤ = ⊤, so if complementary literals exist or ⊤ exists, only keep ⊤.
+    | Bottom `elem` literals = step4elim (filter (/= Bottom) literals)  -- ^ φ ∨ ⊥ = φ, so remove ⊥ in the clause
     | x `elem` xs = step4elim (nub literals)    -- ^ remove duplicate literals
     | otherwise = x : step4elim xs
 

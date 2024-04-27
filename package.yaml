@@ -45,6 +45,7 @@ ghc-options:
 - -Wredundant-constraints
 - -Wunused-imports
 - -Wmissing-export-lists
+- -fno-warn-unused-imports
 
 library:
   source-dirs: src

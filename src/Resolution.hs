@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-|
 Module      : Resolution
 Description : Propositional Resolution
@@ -10,7 +11,9 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module Resolution ( resolution, resoClauses, eachClause, eachLiteral, resolver, validChecker) where
+module Resolution ( resolution, resoClauses, eachClause, eachLiteral, resolver,
+                    validChecker, resoFormulaPrint, resoClausesPrint, resoResultPrint,
+                    resoEachPrint, eachLiteralPrint ) where
 
 import Text.PrettyPrint ( Doc, (<+>), text )
 

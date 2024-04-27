@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 module CNFSpec (cnfTests) where
 import Test.Hspec
 import Text.PrettyPrint (render)
@@ -45,16 +46,18 @@ cnfTests = describe "CNF Tests" $ do
         -- (⊤ → q) ≡ ((p ∧ (¬ p)) → q)
         cnfAlgo (Bottom :-> Var 'q') `shouldBe` [[Top]]
         -- (p → ((q → r) → ((¬ s) ∨ r)))
-        cnfAlgo (Var 'p' :-> ((Var 'q' :-> Var 'r') :/\ ((Neg (Var 's')) :\/ Var 'r'))) `shouldBe` 
+        cnfAlgo (Var 'p' :-> ((Var 'q' :-> Var 'r') :/\ (Neg (Var 's') :\/ Var 'r'))) `shouldBe` 
          [[Neg (Var 'p'),Neg (Var 'q'),Var 'r'],[Neg (Var 'p'),Neg (Var 's'),Var 'r']]
         -- ((p → q) ∨ (q → p))
         cnfAlgo ((Var 'p' :-> Var 'q') :\/ (Var 'q' :-> Var 'p')) `shouldBe` [[Top]]
-        -- ((¬ (¬ (¬ p))) → (¬ ((q ∧ (¬ r)) ∨ ((¬ q) → r))))
+        -- (¬ (¬ (¬ p)) → (¬ ((q ∧ (¬ r)) ∨ ((¬ q) → r))))
         -- This answer has been simplified.
-        cnfAlgo ((Neg(Neg(Neg (Var 'p')))) :-> Neg ((Var 'q' :/\ Neg (Var 'r')) :\/ (Neg (Var 'q') :-> Var 'r'))) `shouldBe`
+        cnfAlgo (Neg(Neg(Neg (Var 'p'))) :-> Neg ((Var 'q' :/\ Neg (Var 'r')) :\/ (Neg (Var 'q') :-> Var 'r'))) `shouldBe`
          [[Var 'p',Neg (Var 'r')],[Var 'p',Neg (Var 'q'),Var 'r']]
         -- ((p ∧ (¬ p)) → q)
         cnfAlgo ((Var 'p' :/\ Neg (Var 'p')) :-> Var 'q') `shouldBe` [[Top]]
+        -- (⊤ → q)
+        cnfAlgo (Top :-> Var 'q') `shouldBe` [[Var 'q']]
         -- ((p → r) ↔ (q → p))      answer is not [[Neg (Var 'r'),Neg (Var 'q'),Var 'p'],[Var 'q',Neg (Var 'p'),Var 'r']]
         cnfAlgo ((Var 'p' :-> Var 'r') :<-> (Var 'q' :-> Var 'p')) `shouldBe` [[Var 'p',Neg (Var 'q')],[Neg (Var 'p'),Var 'r']]
         -- (p → (q ∧ (¬ q)))    The answer shows (Q ∨ ¬P) ∧ (¬Q ∨ ¬P), is also correct.
@@ -81,20 +84,27 @@ cnfTests = describe "CNF Tests" $ do
          (Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')
         -- (¬ (p ∧ (¬ p)))
         step2 (Neg (Var 'p' :/\ Neg (Var 'p'))) `shouldBe` Top
+        -- (p ∧ (¬ p))
+        step2 (Var 'p' :/\ Neg (Var 'p')) `shouldBe` Bottom
     --     -- (((p ∨ q) ↔ q) ∨ r)
     --     step2 ((Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))) `shouldBe`
     --      ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 
     --     step2 ((Neg (Var 'p' :\/ Bottom) :\/ (Var 'q' :\/ Neg Top)) :/\ (Neg (Var 'q' :\/ Top) :\/ (Var 'p' :\/ Bottom))) `shouldBe`
     --      ((Neg (Var 'p') :/\ Top) :\/ (Var 'q' :\/ Bottom)) :/\ ((Neg (Var 'q') :/\ Bottom) :\/ (Var 'p' :\/ Bottom))
+        -- (p → q)
+        evaluate (step2 (Var 'p' :-> Var 'q')) `shouldThrow`
+         errorCall "Error: '->' notation detected. Ensure the formula has been processed by 'step1'."
+        -- (p ↔ q)
+        evaluate (step2 (Var 'p' :<-> Var 'q')) `shouldThrow`
+         errorCall "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
 
-    --     evaluate (step2 (Var 'p' :-> Var 'q')) `shouldThrow`
-    --      errorCall "There should have no -> notation, make sure the fomula has been processed by step1."
-
-    --     evaluate (step2 (Var 'p' :<-> Var 'q')) `shouldThrow`
-    --      errorCall "There should have no <-> notation, make sure the fomula has been processed by step1."
-
-    -- it "step3: distribute disjunctions into conjunctions" $ do
+    it "step3" $ do
+        evaluate (step3 (Var 'p' :-> Var 'q')) `shouldThrow`
+         errorCall "Error: '->' notation detected. Ensure the formula has been processed by 'step1'."
+        -- (p ↔ q)
+        evaluate (step3 (Var 'p' :<-> Var 'q')) `shouldThrow`
+         errorCall "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
     --     step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
     --      (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 
@@ -118,18 +128,19 @@ cnfTests = describe "CNF Tests" $ do
 
 
 
-    -- it "step4delsub: remove duplicate variables" $ do
-    --     step4delsub [[Var 'r'],[Var 'r'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe`
-    --      [[Neg (Var 'p'),Var 'q',Var 'r']]
-
-    --     step4delsub [[Var 'd'],[Neg (Var 'p'),Var 'q',Var 'r']] `shouldBe`
-    --      [[Var 'd'],[Neg (Var 'p'),Var 'q',Var 'r']]
+    it "step4delsub" $ do
+        -- In case of literal [Bottom] exists
+        evaluate (step4delsub [[Bottom],[Var 'p',Var 'r']]) `shouldThrow`
+         errorCall "Error: 'Bottom' notation detected. Ensure the formula has been processed by 'step4elim'."
 
 
-    -- it "step4elim" $ do
-    --     step4elim [Neg (Var 'q'),Var 'q',Var 'r'] `shouldBe` [Var 'r']
+    it "step4elim" $ do
+        -- In case of p ∨ ¬ p = ⊤
+        step4elim [Neg (Var 'q'),Var 'q',Var 'r'] `shouldBe` [Top]
 
-    --     step4elim [Neg (Var 'p'),Var 'q',Var 'r'] `shouldBe` [Neg (Var 'p'),Var 'q',Var 'r']
+    it "stringFilter" $ do
+        stringFilter ((Top :-> Var 'q') :<-> (Var 'q' :\/ Bottom)) `shouldBe` 
+         "Top :-> Var 'q' :<-> Var 'q' :\\/ Bottom"
 
 
     -- it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-|
 Module      : Common
 Description : Common definitions for the project
@@ -59,8 +60,8 @@ formulaExpre (formula1 :-> formula2) = parens (formulaExpre formula1 <+>
                                          text "→" <+> formulaExpre formula2)
 formulaExpre (formula1 :<-> formula2) = parens (formulaExpre formula1 <+>
                                          text "↔" <+> formulaExpre formula2)
-formulaExpre (Bottom) = text "⊥"
-formulaExpre (Top) = text "⊤"
+formulaExpre Bottom = text "⊥"
+formulaExpre Top = text "⊤"
 
 -- | Definition of the negation for basic rules
 revNeg :: LogicFormula -> LogicFormula

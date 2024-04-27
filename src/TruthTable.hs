@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Eta reduce" #-}
 {-|
 Module      : TruthTable
 Description : Construct a truth table for a given formula
@@ -10,11 +13,7 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module TruthTable ( truthTablePrint
-                  , uniqVars
-                  , allPosStatus
-                  , calculator
-                  ) where
+module TruthTable ( truthTablePrint, rowString, truthTableResults, uniqVars, allPosStatus, calculator, showBool ) where
 
 import Data.List ( intercalate, nub )
 import Data.Maybe ( fromMaybe )
@@ -40,15 +39,31 @@ import Common
 -- > F       F       T       T
 -- > F       F       F       T
 truthTablePrint :: LogicFormula -> Doc
-truthTablePrint formula = text "The given formula is:\n" <+>
-                     formulaExpre formula <+>
-                     text "\nTruth table result:\n" <+>
-                     text (firstRow ++ intercalate "\n" [rowString status | status <- allPosStatus (uniqVars formula)] ) <+>
-                     text "\n"
-  where
-    firstRow = intercalate "\t" (map (\v -> [v]) (uniqVars formula)) ++ "\tResult\n"
-    rowString status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
-                               "\t" ++ showBool (calculator formula status)
+truthTablePrint formula =   text "===Generating Truth Table to a formula===\n\n" <+>
+                            text "The given formula is:\n" <+>
+                            formulaExpre formula <+>
+                            text "\nTruth table result:\n" <+>
+                            text (firstRow ++ intercalate "\n" [rowString formula status | status <- allPosStatus (uniqVars formula)] ) <+>
+                            text "\n\n" <+> truthTableResultPrint results <+>
+                            text "\n"
+                        where
+                            firstRow = intercalate "\t" (map (: []) (uniqVars formula)) ++ "\tResult\n"
+                            results = truthTableResults formula (allPosStatus (uniqVars formula))
+
+
+rowString :: LogicFormula -> [(Char, BoolValue)] -> [Char]
+rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
+                           "\t" ++ showBool (calculator formula status)
+
+
+truthTableResults :: LogicFormula -> [[(Char, BoolValue)]] -> [BoolValue]
+truthTableResults formula status = map (calculator formula) status
+
+truthTableResultPrint :: [BoolValue] -> Doc
+truthTableResultPrint boolValues
+    | all (== T) boolValues = text "All results are true, the formula is valid."
+    | all (== F) boolValues = text "All results are false, the formula is unsatisfiable."
+    | otherwise = text "Exist true results, the formula is satisfiable."
 
 
 -- | Get all non-repeating propositional variables from a given formula.
@@ -77,7 +92,7 @@ uniqVars Top = []
 allPosStatus :: [Char] -> [[(Char, BoolValue)]]
 allPosStatus [] = [[]]
 allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | status <- rest]
-  where rest = allPosStatus vs
+    where rest = allPosStatus vs
 
 
 -- | Calculate the bool value of given formula and case status.

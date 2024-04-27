@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-|
 Module      : DPLL
 Description : Implementing Davis-Putnam-Logemann-Lovelace (DPLL) algorithm and DPLL algorithm using Haskell functions
@@ -199,13 +200,6 @@ unitClausePrint start clauses@(x:xs)
 checkMoreSplit :: [[LogicFormula]] -> Bool
 checkMoreSplit clauses = (unitClause (head (head clauses)) clauses /= clauses) || (unitClause (revNeg (head (head clauses))) clauses /= clauses)
 
-
-dpllSplitPrint :: [[LogicFormula]] -> Doc
-dpllSplitPrint clauses =text "\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
-                        unitClausePrint start clauses <+> 
-                        text "\nIn case of " <+> formulaExpre (revNeg start) <+> text " -> 0: \n" <+>
-                        unitClausePrint (revNeg start) clauses
-        where   start = head (head clauses)
 
 
 -- | Non-splitting elimination of each clause if exists a unit clause.
