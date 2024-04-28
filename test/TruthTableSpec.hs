@@ -11,8 +11,13 @@ truthTableTests = describe "TruthTable Tests" $ do
     it "truthTable: generate a pretty truth table of a given formula" $ do
         let formula = (Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r'))
         let expectedResult = unlines [
-                "===Generating Truth Table to a formula===\n\n The given formula is:\n ((p → (q → r)) → ((p → q) → (p → r)))\n",
-                "Truth table result:\n p\tq\tr\tResult\nT\tT\tT\tT\nT\tT\tF\tT\nT\tF\tT\tT\nT\tF\tF\tT\nF\tT\tT\tT\nF\tT\tF\tT\nF\tF\tT\tT\nF\tF\tF\tT "
+                "===Generating Truth Table to a formula===",
+                "\n The given formula is:",
+                " ((p → (q → r)) → ((p → q) → (p → r))) ",
+                "Truth table result:",
+                " p\tq\tr\tResult",
+                "T\tT\tT\tT\nT\tT\tF\tT\nT\tF\tT\tT\nT\tF\tF\tT\nF\tT\tT\tT\nF\tT\tF\tT\nF\tF\tT\tT\nF\tF\tF\tT \n",
+                " All results are true, the formula is valid. "
                 ]
         render (truthTablePrint formula) `shouldBe` expectedResult
 
