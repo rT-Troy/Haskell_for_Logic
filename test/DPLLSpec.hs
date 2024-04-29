@@ -8,7 +8,7 @@ import Common
 import DPLL
     ( dpllFormulaPrint
     , dpllClausesPrint
-    , dpllResultSets
+    , dpllResultPrint
     , dpllResultPrint
     , unitClausePrint
     , emptyPrint
@@ -50,10 +50,10 @@ dpllTests = describe "DPLL Tests" $ do
                 "Step 3:",
                 " ((p ∧ q) ∧ ((¬ q) ∨ (¬ r))) ",
                 "",
-                "Step 4, the clause sets is:",
+                "Step 4, the clause set is:",
                 " { { p },  { q },  { (¬ q) , (¬ r) } }",
                 " ",
-                "===Applying DPLL algorithm to clause sets===",
+                "===Applying DPLL algorithm to a clause set===",
                 "",
                 " The clause set is: ",
                 " { { p },  { q },  { (¬ q) , (¬ r) } } ",
@@ -73,7 +73,7 @@ dpllTests = describe "DPLL Tests" $ do
         let clauses = [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
         let expectedResult = unlines [
                 "",
-                "===Applying DPLL algorithm to clause sets===",
+                "===Applying DPLL algorithm to a clause set===",
                 "",
                 " The clause set is: ",
                 " { { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p } } ",

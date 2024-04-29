@@ -11,7 +11,7 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauseSets, strToLogicFormula,
+module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauses, strToLogicFormula,
               step4delsub, step4Cpmtr, checkTautologicals, checkTautological, 
               removeTautological, step4elim, stringFilter ) where
 import Data.List ( sortOn, nub)
@@ -52,7 +52,7 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
                     formulaExpre afterStep2 <+>
                     text "\n\nStep 3:\n" <+>
                     formulaExpre afterstep3 <+>
-                    text "\n\nStep 4, the clause sets is:\n" <+>
+                    text "\n\nStep 4, the clause set is:\n" <+>
                     text "{" <+> clausesPrint afterStep4 <+> text "}\n"
                 where afterStep1 = step1 formula
                       afterStep2 = step2 afterStep1
@@ -71,40 +71,6 @@ cnfPrint formula  = text "\n===Apply CNF algorithm to a formula===\n\n" <+>
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'r'),Var 'p',Var 'q']]
 cnfAlgo :: LogicFormula -> [[LogicFormula]]
 cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
-
-
--- | CNF iffSplit: eliminate iff ↔ from the input formula to implication,
--- |  then implement step1 to step3 for each implication.
---
--- Example:
---
--- > $ iffSplit ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
--- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :\/ (Var 'p' :\/ Var 'q')) :/\ (Neg (Var 'r') :\/ (Var 'p' :\/ Var 'q')))
--- iffSplit :: LogicFormula -> LogicFormula
--- iffSplit (Neg (f1 :<-> f2)) = step2 (Neg (iffSplit (step3 (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))) :/\ step3 (step2 (iffSplit (step1imp (iffSplit f2 :-> iffSplit f1))))) ))
--- --iffSplit (Neg (f1 :<-> f2)) = iffSplit (step2 (step3 (step2 (iffSplit (revNeg (step1imp (iffSplit f1 :-> iffSplit f2))))))) :/\ iffSplit (step2 (step3 (step2 (iffSplit (revNeg (step1imp (iffSplit f2 :-> iffSplit f1)))))))
--- iffSplit (Neg (f1 :-> f2)) = iffSplit (step3 (step2 (iffSplit (revNeg (step1imp (f1 :-> f2))))))
--- iffSplit (f1 :<-> f2) = iffSplit (step3 (step2 (iffSplit (step1imp (iffSplit f1 :-> iffSplit f2)))) :/\ step3 (step2 (iffSplit (step1imp (iffSplit f2 :-> iffSplit f1)))))
--- iffSplit (f1 :-> f2) = iffSplit (step3 (step2 (iffSplit (step1imp (f1 :-> f2)))))
--- iffSplit f = f
-
--- | CNF step1imp: eliminate iff ↔ and implication → from the input formula.
---
--- Example:
---
--- > $ step1imp ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
--- > Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')
--- > $ step1imp ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
--- > (Neg (Var 'p' :\/ Var 'q') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q' :\/ Var 'r') :\/ (Var 'p' :\/ Var 'q'))
--- step1imp :: LogicFormula -> LogicFormula
--- step1imp (f1 :<-> f2) = iffSplit (f1 :<-> f2)
--- step1imp (f1 :-> f2) = step1imp (Neg f1) :\/ step1imp f2
--- step1imp (Neg f) = Neg (step1imp f)
--- step1imp (f1 :/\ f2) = step1imp f1 :/\ step1imp f2
--- step1imp (f1 :\/ f2) = step1imp f1 :\/ step1imp f2
--- step1imp Bottom = Bottom
--- step1imp Top = Top
--- step1imp f = f
 
 
 -- | CNF step1: eliminate iff ↔ and implication → from the input formula.
@@ -192,10 +158,10 @@ step3 f = f
 -- > $ step4 (((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
-step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauseSets list)))))   -- ^ sortOn: make the shortest clause in the front
+step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))   -- ^ sortOn: make the shortest clause in the front
 
 
--- | Removing the clauses if it is a subset of another clause in the clause sets.
+-- | Removing the clauses if it is a subset of another clause in the clause set.
 --
 -- Example:
 --
@@ -211,7 +177,7 @@ step4delsub clauses@(x:xs)
     | otherwise = x : step4delsub xs
 
 
--- | Remove the tautological clauses in a clause sets, such as ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = T.
+-- | Remove the tautological clauses in a clause set, such as ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = T.
 -- | ((p → r) ↔ (q → p))
 step4Cpmtr :: [[LogicFormula]] -> [[LogicFormula]]
 step4Cpmtr [] = []
@@ -220,7 +186,7 @@ step4Cpmtr (x:xs)
     | otherwise = x : step4Cpmtr xs
 
 
--- | Check if exists tautological clause in a clause sets.
+-- | Check if exists tautological clause in a clause set.
 checkTautologicals :: [LogicFormula] -> [[LogicFormula]] -> Bool
 checkTautologicals _ [] = False
 checkTautologicals x (y:ys)
@@ -237,7 +203,7 @@ checkTautological (x:xs) orixss (y:ys) oriyss
     | otherwise = False
 
 
--- | Remove the tautological clause in a clause sets.
+-- | Remove the tautological clause in a clause set.
 removeTautological :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
 removeTautological _ [] = []
 removeTautological x (y:ys)
@@ -263,10 +229,10 @@ step4elim literals@(x:xs)
 -- |  then convert each clause to a list of literals.
 -- Example:
 --
--- > $ toClauseSets ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
+-- > $ toClauses ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
 -- > [[Neg (Var 'p'),Var 'p',Var 'q',Var 'r'],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r']]
-toClauseSets :: LogicFormula -> [[LogicFormula]]
-toClauseSets formula = map (map strToLogicFormula) (toClausesString (stringFilter formula))
+toClauses :: LogicFormula -> [[LogicFormula]]
+toClauses formula = map (map strToLogicFormula) (toClausesString (stringFilter formula))
 
 
 toClausesString :: String -> [[String]]

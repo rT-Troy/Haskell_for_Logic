@@ -39,33 +39,47 @@ prFormulaPrint formula =
 
 
 -- | Print the result of propositional resolution, which is either unsatisfiable or satisfiable.
-prResultPrint :: [[LogicFormula]] -> Doc
-prResultPrint clauses =   text "\n\n The result of Resolution is: \n" <+>
-                            if prValidChecker clauses then text "It yields empty clause □, which is unsatisfiable.\n"
-                            else text "It yields Ø, which is satisfiable.\n"
+prResultPrint :: Bool -> Doc
+prResultPrint satis = if satis then text "It yields Ø, which is satisfiable.\n"
+                        else text "It yields empty clause □, which is unsatisfiable.\n"
+
+
+prResultSatisfy :: [[LogicFormula]] -> Bool
+prResultSatisfy clauses
+    | prValidChecker finalClauses = False
+    | otherwise = True
+        where finalClauses = prFinalClauses clauses
+
+
+prClausesPrint :: [[LogicFormula]] -> Doc
+prClausesPrint clauses =    text "\n===Applying Resolution to a clause set===\n\n" <+>
+                            text "\n\n The resolution clause set is: \n" <+>
+                            prFinalClausesPrint clauses <+> text "\n\n" <+>
+                            prResultPrint (prResultSatisfy clauses)
+
 
 
 -- | Implementing propositional resolution rule to get the final clause set.
--- > $ prClauses [[Var 'p', Var 'q', Var 'r'],[Neg (Var 'p'), Neg (Var 'q')],[Neg (Var 'r')]]
+-- > $ pcFinalClauses [[Var 'p', Var 'q', Var 'r'],[Neg (Var 'p'), Neg (Var 'q')],[Neg (Var 'r')]]
 -- [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p'),Neg (Var 'q')],[Neg (Var 'r')],[Var 'r'],[Var 'p',Var 'q'],[Neg (Var 'p'),Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Neg (Var 'q'),Var 'r'],[]]
 -- >
--- > $ prClauses [[Var 'p', Var 'q', Var 'r'],[Var 'p', Neg (Var 'q')],[Neg (Var 'r')]]
+-- > $ pcFinalClauses [[Var 'p', Var 'q', Var 'r'],[Var 'p', Neg (Var 'q')],[Neg (Var 'r')]]
 -- [[Var 'p',Var 'q',Var 'r'],[Var 'p',Neg (Var 'q')],[Neg (Var 'r')],[Var 'r',Var 'p'],[Var 'p',Var 'q'],[Var 'p',Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'q'),Var 'r',Var 'p'],[Var 'p']]
-prClauses :: [[LogicFormula]] -> [[LogicFormula]]
-prClauses []  = []
-prClauses clauses@(x:xs)
+prFinalClauses :: [[LogicFormula]] -> [[LogicFormula]]
+prFinalClauses []  = []
+prFinalClauses clauses@(x:xs)
     | prValidChecker clauses = clauses    -- Detected the empty clause, so the clause set is valid.
     | nextNewClauses == xs = clauses    -- The clause set cannot be resolved anymore.
-    | otherwise = x : prClauses (nub (xs ++ nextNewClauses))
+    | otherwise = x : prFinalClauses (nub (xs ++ nextNewClauses))
         where nextNewClauses = prEachClause x xs
 
 -- | Print the final clause set of propositional resolution. 
-prClausesPrint :: [[LogicFormula]] -> Doc
-prClausesPrint []  = text ""
-prClausesPrint clauses@(x:xs)
-    | prValidChecker clauses = clausesPrint clauses <+> prResultPrint clauses    -- End the loop, show the resolution clause set.
-    | nextNewClauses == xs = clausesPrint clauses <+> text "" <+> prResultPrint clauses    -- The clause set cannot be resolved anymore. 
-    | otherwise = clausesPrint [x] <+> prClausesPrint (nub (xs ++ nextNewClauses))
+prFinalClausesPrint :: [[LogicFormula]] -> Doc
+prFinalClausesPrint []  = text ""
+prFinalClausesPrint clauses@(x:xs)
+    | prValidChecker clauses = clausesPrint clauses    -- End the loop, show the resolution clause set.
+    | nextNewClauses == xs = clausesPrint clauses    -- The clause set cannot be resolved anymore. 
+    | otherwise = clausesPrint [x] <+> prFinalClausesPrint (nub (xs ++ nextNewClauses))
         where nextNewClauses = prEachClause x xs
 
 

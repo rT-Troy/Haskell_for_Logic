@@ -12,10 +12,13 @@ Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
 module DPLL ( dpllFormulaPrint
+            , dpllFormula
             , dpllClausesPrint
-            , dpllResultSets
+            , dpllClauses
             , dpllResultPrint
             , unitClausePrint
+            , unitClause
+            , dpllResultSatisfy
             , emptyPrint
             , checkNextSplit
             , dpllElimAll
@@ -28,6 +31,7 @@ import Data.List ( sortOn, nub )
 import Common
 import CNF
 import Text.PrettyPrint ( Doc, (<+>), text )
+import Data.Bool (bool)
 
 
 -- | Print out the result of DPLL algorithm to a CNF formula.
@@ -88,12 +92,16 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a formula=
                 where   negFormula = revNeg formula
                         clauses = toCNFClauses negFormula
 
+dpllFormula :: LogicFormula -> [BoolValue]
+dpllFormula formula =   dpllClauses clauses
+                where   negFormula = revNeg formula
+                        clauses = toCNFClauses negFormula
 
--- | Print out the result of DPLL algorithm to clause sets
+-- | Print out the result of DPLL algorithm to clause set
 -- Example:
 --
 -- > $ dpllClausesPrint [[Neg (Var 'r'),Neg (Var 'p'),Var 'q'],[Var 's',Neg (Var 't'),Neg (Var 'p')],[Var 's',Var 'p', Var 'r'],[Var 't',Var 's', Var 'q'],[Neg (Var 'r'),Neg (Var 'p'),Neg (Var 'q')],[Var 's',Var 't',Var 'r'],[Var 'p']]
--- > ===Applying DPLL algorithm to clause sets===
+-- > ===Applying DPLL algorithm to clause set===
 -- >
 -- > The clause set is: 
 -- >  { { (¬ r) , (¬ p) , q },  { s , (¬ t) , (¬ p) },  { s , p , r },  { t , s , q },  { (¬ r) , (¬ p) , (¬ q) },  { s , t , r },  { p } }
@@ -107,28 +115,25 @@ dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a formula=
 -- >  It yields Ø, which is satisfiable. 
 -- >
 dpllClausesPrint :: [[LogicFormula]] -> Doc
-dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to clause sets===\n\n" <+>
+dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to a clause set===\n\n" <+>
                                 text "The clause set is: \n" <+>
                                 text "{" <+> clausesPrint clauses <+> text "}" <+>
-                                unitClausePrint (sortOn length clauses) <+>
+                                unitClausesPrint (concat clauses) (sortOn length clauses) <+>
                                 text "\n\n The result is: \n" <+>
-                                dpllResultPrint (dpllResultSets clauses) <+> text "\n"
+                                dpllResultPrint (dpllClauses clauses) <+> text "\n"
 
-
-
-
--- | Check if the clause sets is satisfiable, and print out the result.
+-- | Check if the clause set is satisfiable, and print out the result.
 -- | If it is valid, it yields Ø, which is satisfiable.
 -- | If it is invalid, it yields empty clause □, which is unsatisfiable.
 --
 -- Example:
 --
-dpllResultSets :: [[LogicFormula]] -> [BoolValue]
-dpllResultSets []  = [F]  -- ^ The answer of □, the case has been eliminated all clauses.
-dpllResultSets clauses@(x:xs) 
+dpllClauses :: [[LogicFormula]] -> [BoolValue]
+dpllClauses []  = [F]  -- ^ The answer of □, the case has been eliminated all clauses.
+dpllClauses clauses@(x:xs) 
         | null xs && null nextClauses=  [T]    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | length x > 1 && not (null xs) && checkNextSplit clauses = dpllResultSets negNextClauses ++ dpllResultSets nextClauses
-        | otherwise = dpllResultSets nextClauses   -- ^ checkNextSplit clauses: The case do not need to split.                   
+        | length x > 1 && not (null xs) && checkNextSplit clauses = dpllClauses negNextClauses ++ dpllClauses nextClauses
+        | otherwise = dpllClauses nextClauses   -- ^ checkNextSplit clauses: The case do not need to split.                   
                 where   start = head x
                         nextClauses = sortOn length (dpllElim start clauses) -- ^ sortOn to make the shortest clause in the front.
                         negNextClauses = sortOn length (dpllElim (revNeg start) clauses)    -- ^ The negation for split case.
@@ -141,9 +146,14 @@ dpllResultPrint boolValues
         | F `elem` boolValues = text "It exists empty clause □, which is unsatisfiable."    -- ^ If there exists □ in all results, it is unsatisfiable.
         | otherwise = text "It yields Ø, which is satisfiable."    -- ^ All results are Ø, it is satisfiable.
 
+dpllResultSatisfy :: [BoolValue] -> Bool
+dpllResultSatisfy boolValues
+        | F `elem` boolValues = False    -- ^ If there exists □ in all results, it is unsatisfiable.
+        | otherwise = True    -- ^ All results are Ø, it is satisfiable.
 
 
--- | Non-splitting elimination of each clause if exists a unit clause.
+
+
 
 
 -- | Print out the DPLL result of given clauses step by step.
@@ -156,20 +166,36 @@ dpllResultPrint boolValues
 -- >
 -- > $ unitClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > 
-unitClausePrint :: [[LogicFormula]] -> Doc
-unitClausePrint [] = text "\n\nSo the answer of this case is { □ }."  -- ^ The answer of □, the case has been eliminated all clauses.
-unitClausePrint clauses@(x:xs)
+unitClausePrint :: LogicFormula -> [[LogicFormula]] -> Doc
+unitClausePrint _ [] = text "\n\nSo the answer of this case is { □ }."  -- ^ The answer of □, the case has been eliminated all clauses.
+unitClausePrint start clauses@(x:xs)
         | null xs && null nextClauses=  text "\n\nSo the answer of this case is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
         | length x > 1 && not (null xs) && checkNextSplit clauses = -- ^ The case of shortest clause have more than 1 literal, so need to split.
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
-                                        emptyPrint nextClauses <+> unitClausePrint nextClauses <+> 
+                                        emptyPrint nextClauses <+> unitClausePrint start nextClauses <+> 
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 0: \n" <+>
-                                        emptyPrint negNextClauses <+> unitClausePrint negNextClauses
+                                        emptyPrint negNextClauses <+> unitClausePrint start negNextClauses
         | otherwise =      text "\n\n" <+> emptyPrint nextClauses <+>  -- ^ checkNextSplit clauses: The case do not need to split.
                                         text "       Use unit " <+> emptyPrint [x] <+> 
-                                        unitClausePrint nextClauses
-                where   start = head x
+                                        unitClausePrint start nextClauses
+                where   
                         nextClauses = sortOn length (dpllElim start clauses) -- ^ sortOn to make the shortest clause in the front.
+                        negNextClauses = sortOn length (dpllElim (revNeg start) clauses)    -- ^ The negation for split case.
+
+unitClausesPrint :: [LogicFormula] -> [[LogicFormula]] -> Doc
+unitClausesPrint [] clauses = text ""
+unitClausesPrint (x:xs) clauses = unitClausePrint x clauses
+
+
+unitClause :: [[LogicFormula]] -> [[LogicFormula]]
+unitClause [] = []  -- ^ The answer of □, the case has been eliminated all clauses.
+unitClause clauses@(x:xs)
+        | null xs && null nextClauses= []    -- ^ The case of clause set Ø, but have to print the last clause as unit.
+        | length x > 1 && not (null xs) && checkNextSplit clauses =    -- ^ The case of shortest clause have more than 1 literal, so need to split.
+                unitClause nextClauses ++ unitClause negNextClauses
+        | otherwise = unitClause nextClauses  -- ^ checkNextSplit clauses: The case do not need to split.
+                where   start = head x
+                        nextClauses = sortOn length (dpllElim start clauses)    -- ^ sortOn to make the shortest clause in the front.
                         negNextClauses = sortOn length (dpllElim (revNeg start) clauses)    -- ^ The negation for split case.
 
 
@@ -181,7 +207,7 @@ emptyPrint clauses
         | otherwise = clausesPrint clauses
 
 
--- | Check if all clause sets have more than 1 literal, if yes, split the specific literal in 2 cases.
+-- | Check if all clause set have more than 1 literal, if yes, split the specific literal in 2 cases.
 checkNextSplit :: [[LogicFormula]] -> Bool
 checkNextSplit clauses = dpllElimAll (head (head clauses)) clauses /= clauses -- || dpllElimAll (revNeg (head (head clauses))) clauses /= clauses
 

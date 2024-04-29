@@ -13,13 +13,14 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module TruthTable ( truthTablePrint, rowString, truthTableResults, truthTableResultPrint, uniqVars, allPosStatus, calculator, showBool ) where
+module TruthTable ( truthTablePrint, rowString, tbElimIff, ttSatisfy, truthTableResults, truthTableResultPrint, uniqVars, allPosStatus, calculator, showBool ) where
 
 import Data.List ( intercalate, nub )
 import Data.Maybe ( fromMaybe )
 import Text.PrettyPrint ( Doc, (<+>), text )
 
 import Common
+import CNF
 
 
 -- | Main function: Generate a pretty truth table of a given formula.
@@ -40,24 +41,34 @@ import Common
 -- > F       F       F       T
 truthTablePrint :: LogicFormula -> Doc
 truthTablePrint formula =   text "===Generating Truth Table to a formula===\n\n" <+>
-                            text "The given formula is:\n" <+>
-                            formulaExpre formula <+>
+                            text "The non-iff formula is:\n" <+>
+                            formulaExpre elimFormula <+>
                             text "\nTruth table result:\n" <+>
-                            text (firstRow ++ intercalate "\n" [rowString formula status | status <- allPosStatus (uniqVars formula)] ) <+>
+                            text (firstRow ++ intercalate "\n" [rowString elimFormula status | status <- allPosStatus (uniqVars (tbElimIff formula))] ) <+>
                             text "\n\n" <+> truthTableResultPrint results <+>
                             text "\n"
                         where
-                            firstRow = intercalate "\t" (map (: []) (uniqVars formula)) ++ "\tResult\n"
-                            results = truthTableResults formula (allPosStatus (uniqVars formula))
+                            elimFormula = tbElimIff formula
+                            firstRow = intercalate "\t" (map (: []) (uniqVars elimFormula)) ++ "\tResult\n"
+                            results = truthTableResults elimFormula (allPosStatus (uniqVars elimFormula))
 
+
+tbElimIff :: LogicFormula -> LogicFormula
+tbElimIff (f1 :<-> f2) = tbElimIff ((f1 :-> f2) :/\ (f2 :-> f1))
+tbElimIff f = f
 
 rowString :: LogicFormula -> [(Char, BoolValue)] -> [Char]
-rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
-                           "\t" ++ showBool (calculator formula status)
+rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars (tbElimIff formula))) ++
+                           "\t" ++ showBool (calculator (tbElimIff formula) status)
 
 
 truthTableResults :: LogicFormula -> [[(Char, BoolValue)]] -> [BoolValue]
-truthTableResults formula status = map (calculator formula) status
+truthTableResults formula status = map (calculator (tbElimIff formula)) status
+
+ttSatisfy :: [BoolValue] -> Bool
+ttSatisfy boolValues
+    | all (== F) boolValues = False
+    | otherwise = True
 
 truthTableResultPrint :: [BoolValue] -> Doc
 truthTableResultPrint boolValues
@@ -91,8 +102,8 @@ uniqVars Top = []
 
 allPosStatus :: [Char] -> [[(Char, BoolValue)]]
 allPosStatus [] = [[]]
-allPosStatus (v:vs) = [(v, T):status | status <- rest] ++ [(v, F):status | status <- rest]
-    where rest = allPosStatus vs
+allPosStatus (x:xs) = [(x, T):status | status <- rest] ++ [(x, F):status | status <- rest]
+    where rest = allPosStatus xs
 
 
 -- | Calculate the bool value of given formula and case status.
