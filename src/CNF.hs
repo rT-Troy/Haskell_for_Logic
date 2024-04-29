@@ -12,8 +12,8 @@ Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
 module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauseSets, strToLogicFormula,
-              step4delsub, step4Cpmtr, checkComplementarys, checkComplementary, 
-              removeComplementary, step4elim, stringFilter ) where
+              step4delsub, step4Cpmtr, checkTautologicals, checkTautological, 
+              removeTautological, step4elim, stringFilter ) where
 import Data.List ( sortOn, nub)
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Data.List.Split ( splitOn )
@@ -211,40 +211,40 @@ step4delsub clauses@(x:xs)
     | otherwise = x : step4delsub xs
 
 
--- | Remove the complementary clauses in a clause sets, such as ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = T.
+-- | Remove the tautological clauses in a clause sets, such as ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = T.
 -- | ((p → r) ↔ (q → p))
 step4Cpmtr :: [[LogicFormula]] -> [[LogicFormula]]
 step4Cpmtr [] = []
 step4Cpmtr (x:xs)
-    | checkComplementarys x xs = step4Cpmtr (removeComplementary x xs)
+    | checkTautologicals x xs = step4Cpmtr (removeTautological x xs)
     | otherwise = x : step4Cpmtr xs
 
 
--- | Check if exists complementary clause in a clause sets.
-checkComplementarys :: [LogicFormula] -> [[LogicFormula]] -> Bool
-checkComplementarys _ [] = False
-checkComplementarys x (y:ys)
-    | checkComplementary x x y y = True
-    | otherwise = checkComplementarys x ys
+-- | Check if exists tautological clause in a clause sets.
+checkTautologicals :: [LogicFormula] -> [[LogicFormula]] -> Bool
+checkTautologicals _ [] = False
+checkTautologicals x (y:ys)
+    | checkTautological x x y y = True
+    | otherwise = checkTautologicals x ys
 
 
 
-checkComplementary :: [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> Bool
-checkComplementary [] _ [] _ = True
-checkComplementary (x:xs) orixss (y:ys) oriyss
+checkTautological :: [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> Bool
+checkTautological [] _ [] _ = True
+checkTautological (x:xs) orixss (y:ys) oriyss
     | length orixss /= length oriyss = False
-    | revNeg x `elem` oriyss && revNeg y `elem` orixss = checkComplementary xs orixss ys oriyss
+    | revNeg x `elem` oriyss && revNeg y `elem` orixss = checkTautological xs orixss ys oriyss
     | otherwise = False
 
 
--- | Remove the complementary clause in a clause sets.
-removeComplementary :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
-removeComplementary _ [] = []
-removeComplementary x (y:ys)
-    | checkComplementary x x y y = removeComplementary x ys
-    | otherwise = y : removeComplementary x ys
+-- | Remove the tautological clause in a clause sets.
+removeTautological :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
+removeTautological _ [] = []
+removeTautological x (y:ys)
+    | checkTautological x x y y = removeTautological x ys
+    | otherwise = y : removeTautological x ys
 
--- | Removing the duplicate literals and complementary literals such as p and ¬p in the same clause.
+-- | Removing the duplicate literals and tautological literals such as p and ¬p in the same clause.
 --
 -- Example:
 --
@@ -253,7 +253,7 @@ removeComplementary x (y:ys)
 step4elim :: [LogicFormula] -> [LogicFormula]
 step4elim [] = []
 step4elim literals@(x:xs)
-    | Top `elem` literals || revNeg x `elem` xs = [Top]  -- ^ p ∨ ¬ p = ⊤, φ ∨ ⊤ = ⊤, so if complementary literals exist or ⊤ exists, only keep ⊤.
+    | Top `elem` literals || revNeg x `elem` xs = [Top]  -- ^ p ∨ ¬ p = ⊤, φ ∨ ⊤ = ⊤, so if tautological literals exist or ⊤ exists, only keep ⊤.
     | Bottom `elem` literals = step4elim (filter (/= Bottom) literals)  -- ^ φ ∨ ⊥ = φ, so remove ⊥ in the clause
     | x `elem` xs = step4elim (nub literals)    -- ^ remove duplicate literals
     | otherwise = x : step4elim xs

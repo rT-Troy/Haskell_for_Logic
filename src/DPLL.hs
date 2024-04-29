@@ -126,9 +126,8 @@ dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to clause set
 dpllResultSets :: [[LogicFormula]] -> [BoolValue]
 dpllResultSets []  = [F]  -- ^ The answer of □, the case has been eliminated all clauses.
 dpllResultSets clauses@(x:xs) 
-        | null x  = [F]    -- ^ The case of clause set Ø
         | null xs && null nextClauses=  [T]    -- ^ The case of clause set Ø, but have to print the last clause as unit.
-        | length x > 1 && not (null xs) && checkNextSplit clauses = dpllResultSets nextClauses  ++ dpllResultSets negNextClauses
+        | length x > 1 && not (null xs) && checkNextSplit clauses = dpllResultSets negNextClauses ++ dpllResultSets nextClauses
         | otherwise = dpllResultSets nextClauses   -- ^ checkNextSplit clauses: The case do not need to split.                   
                 where   start = head x
                         nextClauses = sortOn length (dpllElim start clauses) -- ^ sortOn to make the shortest clause in the front.
@@ -160,24 +159,22 @@ dpllResultPrint boolValues
 unitClausePrint :: [[LogicFormula]] -> Doc
 unitClausePrint [] = text "\n\nSo the answer of this case is { □ }."  -- ^ The answer of □, the case has been eliminated all clauses.
 unitClausePrint clauses@(x:xs)
-        | null x  =  unitClausePrint nextClauses <+> text "\n\nSo the answer of this case is { □ }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
         | null xs && null nextClauses=  text "\n\nSo the answer of this case is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
         | length x > 1 && not (null xs) && checkNextSplit clauses = -- ^ The case of shortest clause have more than 1 literal, so need to split.
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
                                         emptyPrint nextClauses <+> unitClausePrint nextClauses <+> 
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 0: \n" <+>
                                         emptyPrint negNextClauses <+> unitClausePrint negNextClauses
-        | checkNextSplit clauses =      text "\n\n" <+> emptyPrint nextClauses <+>  -- ^ The case do not need to split.
+        | otherwise =      text "\n\n" <+> emptyPrint nextClauses <+>  -- ^ checkNextSplit clauses: The case do not need to split.
                                         text "       Use unit " <+> emptyPrint [x] <+> 
                                         unitClausePrint nextClauses
-        | otherwise =                   text "ERROR"
                 where   start = head x
                         nextClauses = sortOn length (dpllElim start clauses) -- ^ sortOn to make the shortest clause in the front.
                         negNextClauses = sortOn length (dpllElim (revNeg start) clauses)    -- ^ The negation for split case.
 
 
 -- | Checks if the clause set is empty and prints out the corresponding result.
--- | This function is used to display the result from unitClausePrint. If the next clause is empty, it outputs "{ [] }", indicating that the formula is satisfiable.
+-- | This function is used to display the result from @unitClausePrint@. If the next clause is empty, it outputs "{ [] }", indicating that the formula is satisfiable.
 emptyPrint :: [[LogicFormula]] -> Doc
 emptyPrint clauses
         | null clauses = text "{ [] }"
@@ -186,7 +183,7 @@ emptyPrint clauses
 
 -- | Check if all clause sets have more than 1 literal, if yes, split the specific literal in 2 cases.
 checkNextSplit :: [[LogicFormula]] -> Bool
-checkNextSplit clauses = (dpllElimAll (head (head clauses)) clauses /= clauses) || (dpllElimAll (revNeg (head (head clauses))) clauses /= clauses)
+checkNextSplit clauses = dpllElimAll (head (head clauses)) clauses /= clauses -- || dpllElimAll (revNeg (head (head clauses))) clauses /= clauses
 
 
 -- | Non-splitting elimination of each clause if exists a unit clause.
@@ -201,7 +198,6 @@ checkNextSplit clauses = (dpllElimAll (head (head clauses)) clauses /= clauses) 
 dpllElimAll :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
 dpllElimAll _ [] = [[]]
 dpllElimAll start clauses@(x:xs) 
-        | null x = []    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
         | null xs = [x]    -- ^ The case of clause set Ø, just leave [x] as the result for next validation.
         | otherwise = dpllElimAll nextStart nextClauses
                 where   nextStart = head (head nextClauses)

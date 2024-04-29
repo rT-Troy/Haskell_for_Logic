@@ -22,7 +22,9 @@ module Common ( LogicFormula(..)
 
 import Text.PrettyPrint ( Doc, (<+>), parens, text )
 
--- | Define the boolvalue type
+-- | Define the boolvalue type.
+-- | Representing the truth value of a logic formula,
+-- | Also representing the satisfiability (T), unsatisfiability (F).
 data BoolValue = T | F deriving (Show, Eq)
 
 

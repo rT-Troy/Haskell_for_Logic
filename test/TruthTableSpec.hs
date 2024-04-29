@@ -21,6 +21,12 @@ truthTableTests = describe "TruthTable Tests" $ do
                 ]
         render (truthTablePrint formula) `shouldBe` expectedResult
 
+    it "truthTableResultPrint" $ do
+        render (truthTableResultPrint [F,F,F]) `shouldBe` "All results are false, the formula is unsatisfiable."
+        
+        render (truthTableResultPrint [T,F,T]) `shouldBe` "Exist true results, the formula is satisfiable."
+
+
     it "uniqVars: return all unique variables in a formula" $ do
         uniqVars ((Var 'p' :\/ Var 'd') :-> (Var 'q' :/\ Var 'r')) `shouldBe` "pdqr"
         

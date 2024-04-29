@@ -11,21 +11,19 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module Resolution ( resolution, resoClauses, eachClause, eachLiteral, resolver,
-                    validChecker, resoFormulaPrint, resoClausesPrint, resoResultPrint,
-                    resoEachPrint, eachLiteralPrint ) where
+module Resolution  where
 
 import Text.PrettyPrint ( Doc, (<+>), text )
 
 import Common
 import CNF
+import Data.List (sortOn, nub)
 
-resolution :: LogicFormula -> [[LogicFormula]]
-resolution formula = eachClause (cnfAlgo formula)
+-- | Main function: Implementing propositional resolution in pretty print.
 
 
-resoFormulaPrint :: LogicFormula -> Doc
-resoFormulaPrint formula =  
+prFormulaPrint :: LogicFormula -> Doc
+prFormulaPrint formula =
     text "\n===Apply Resolution to a formula===\n\n" <+>
     text "The given formula is: \n" <+>
     formulaExpre formula <+>
@@ -34,64 +32,72 @@ resoFormulaPrint formula =
     text "\n\n If the formula is valid, so its negation should be un-satisfiable... \n" <+>
     text " If the formula is not valid, so its negation should be satisfiable... \n\n" <+>
     cnfPrint negFormula <+>
-    resoClausesPrint (resoClauses (cnfAlgo negFormula))
-        where   
+    prClausesPrint (cnfAlgo negFormula)
+        where
             negFormula = revNeg formula
 
 
-resoClausesPrint :: [[LogicFormula]] -> Doc
-resoClausesPrint clauses =  text "\n Applying Resolution to the clause set... \n" <+>
-                            resoEachPrint clauses <+> resultAnswer 
-                        where   
-                            resultAnswer = resoResultPrint (resoClauses clauses)
 
-
-resoResultPrint :: [[LogicFormula]] -> Doc
-resoResultPrint clauses =   text "\n\n The result of Resolution is: \n" <+>
-                            if validChecker clauses then text "It yields empty clause □, which is unsatisfiable.\n"
+-- | Print the result of propositional resolution, which is either unsatisfiable or satisfiable.
+prResultPrint :: [[LogicFormula]] -> Doc
+prResultPrint clauses =   text "\n\n The result of Resolution is: \n" <+>
+                            if prValidChecker clauses then text "It yields empty clause □, which is unsatisfiable.\n"
                             else text "It yields Ø, which is satisfiable.\n"
 
 
-resoEachPrint :: [[LogicFormula]] -> Doc
-resoEachPrint clauses = text "Resolving the clause yields " <+> clausesPrint clauses <+>
-                        eachClausePrint clauses clauses
+-- | Implementing propositional resolution rule to get the final clause set.
+-- > $ prClauses [[Var 'p', Var 'q', Var 'r'],[Neg (Var 'p'), Neg (Var 'q')],[Neg (Var 'r')]]
+-- [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p'),Neg (Var 'q')],[Neg (Var 'r')],[Var 'r'],[Var 'p',Var 'q'],[Neg (Var 'p'),Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Neg (Var 'q'),Var 'r'],[]]
+-- >
+-- > $ prClauses [[Var 'p', Var 'q', Var 'r'],[Var 'p', Neg (Var 'q')],[Neg (Var 'r')]]
+-- [[Var 'p',Var 'q',Var 'r'],[Var 'p',Neg (Var 'q')],[Neg (Var 'r')],[Var 'r',Var 'p'],[Var 'p',Var 'q'],[Var 'p',Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'q'),Var 'r',Var 'p'],[Var 'p']]
+prClauses :: [[LogicFormula]] -> [[LogicFormula]]
+prClauses []  = []
+prClauses clauses@(x:xs)
+    | prValidChecker clauses = clauses    -- Detected the empty clause, so the clause set is valid.
+    | nextNewClauses == xs = clauses    -- The clause set cannot be resolved anymore.
+    | otherwise = x : prClauses (nub (xs ++ nextNewClauses))
+        where nextNewClauses = prEachClause x xs
+
+-- | Print the final clause set of propositional resolution. 
+prClausesPrint :: [[LogicFormula]] -> Doc
+prClausesPrint []  = text ""
+prClausesPrint clauses@(x:xs)
+    | prValidChecker clauses = clausesPrint clauses <+> prResultPrint clauses    -- End the loop, show the resolution clause set.
+    | nextNewClauses == xs = clausesPrint clauses <+> text "" <+> prResultPrint clauses    -- The clause set cannot be resolved anymore. 
+    | otherwise = clausesPrint [x] <+> prClausesPrint (nub (xs ++ nextNewClauses))
+        where nextNewClauses = prEachClause x xs
 
 
-resoClauses :: [[LogicFormula]] -> [[LogicFormula]]
-resoClauses clauses = clauses ++ eachClause clauses
+-- | Apply resolution by specific clause x with all other clauses in the clause set.
+-- > $ prEachClause [Var 'p', Var 'q', Neg (Var 'r')] [[Neg (Var 'p'), Neg (Var 'q')],[Var 'r']]
+-- > [[Neg (Var 'r')],[Var 'p',Var 'q']]
+prEachClause :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
+prEachClause _ [] = []
+prEachClause clause (x:xs) = prResolver clause x : prEachClause clause xs
 
 
-eachClause :: [[LogicFormula]] -> [[LogicFormula]]
-eachClause [] = []
-eachClause (x:xs) = eachLiteral x xs ++ eachClause (xs ++ eachLiteral x xs)
-
-eachClausePrint :: [[LogicFormula]] -> [[LogicFormula]] -> Doc
-eachClausePrint [] _ = text ""
-eachClausePrint (x:xs) oriClauses = eachLiteralPrint x xs oriClauses <+> eachClausePrint (xs ++ eachLiteral x xs) oriClauses
-
-
-eachLiteral :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
-eachLiteral [] _ = []
-eachLiteral (x:xs) clauses = resolver x clauses ++ eachLiteral xs (resolver x clauses)
+-- | Implementing propositional resolution rule.
+ -- It takes 2 clauses as input, combines them and eliminates the tautological literals in @prElim@.
+ --
+ -- Example:
+ --
+ -- > $ prResolver [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r']
+ -- > [Var 'p',Var 'q',Neg (Var 's')]
+prResolver :: [LogicFormula] -> [LogicFormula] -> [LogicFormula]
+prResolver clause1 clause2 = prElim (clause1 ++ clause2)
 
 
-eachLiteralPrint :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]] -> Doc
-eachLiteralPrint [] _ _ = text ""
-eachLiteralPrint (x:xs) clauses oriClauses
-    | resolver x clauses /= [] = text "\n\nResolving the clause yields " <+>
-                                 formulaExpre x <+> text ":\n" <+> 
-                                 clausesPrint (oriClauses ++ resolver x clauses) <+> 
-                                 eachLiteralPrint xs (resolver x clauses) oriClauses
-    | otherwise = text "" <+> eachLiteralPrint xs (resolver x clauses) oriClauses
+-- | The elimination of tautological literals in the clause set.
+prElim :: [LogicFormula] -> [LogicFormula]
+prElim [] = []
+prElim (x:xs)
+    | x `elem` xs = prElim xs
+    | revNeg x `elem` xs = prElim (filter (\y -> y /= x && y /= revNeg x) xs)
+    | otherwise = x : prElim xs
 
 
-resolver :: LogicFormula -> [[LogicFormula]] -> [[LogicFormula]]
-resolver _ [] = []
-resolver literal (x:xs)
-    | [revNeg literal] == x = [[]]
-    | revNeg literal `elem` x = filter (/= revNeg literal) x : resolver literal xs
-    | otherwise = resolver literal xs
-
-
-validChecker :: [[LogicFormula]] -> Bool
-validChecker clauses = [] `elem` clauses
+-- | Check if the final clause set is valid.
+-- | If the empty clause [] is in the clause set, then it is valid.
+prValidChecker :: [[LogicFormula]] -> Bool
+prValidChecker clauses = [] `elem` clauses

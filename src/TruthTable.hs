@@ -13,7 +13,7 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module TruthTable ( truthTablePrint, rowString, truthTableResults, uniqVars, allPosStatus, calculator, showBool ) where
+module TruthTable ( truthTablePrint, rowString, truthTableResults, truthTableResultPrint, uniqVars, allPosStatus, calculator, showBool ) where
 
 import Data.List ( intercalate, nub )
 import Data.Maybe ( fromMaybe )

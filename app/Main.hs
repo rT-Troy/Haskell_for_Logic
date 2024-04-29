@@ -20,4 +20,4 @@ main = do
     let revClauses = cnfAlgo negFormula
     print (cnfPrint negFormula)
     print (dpllClausesPrint revClauses)
-    print (resoClausesPrint revClauses)
+    print (prClausesPrint revClauses)

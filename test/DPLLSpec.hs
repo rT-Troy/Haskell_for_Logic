@@ -114,6 +114,12 @@ dpllTests = describe "DPLL Tests" $ do
          [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 
 
+    it "checkNextSplit" $ do
+        checkNextSplit [[Var 'p'], [Neg (Var 'p')], [Var 'r']] `shouldBe` True
+
+    it "checkNextSplit" $ do
+        dpllElimAll (Neg (Var 'p')) [[Var 'p'], [Neg (Var 'p')]] `shouldBe` [[]]
+
 
     it "dpllElimAll" $ do
         -- week 6 lecture
@@ -121,6 +127,7 @@ dpllTests = describe "DPLL Tests" $ do
         -- week 6 lecture
         dpllElimAll (Neg (Var 'p')) [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],
          [Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']] `shouldBe` [[]]
+
 
     it "dpllElim: week 6 lecture" $ do
         -- week 6 lecture
