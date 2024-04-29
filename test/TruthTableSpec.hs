@@ -12,7 +12,7 @@ truthTableTests = describe "TruthTable Tests" $ do
         let formula = (Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r'))
         let expectedResult = unlines [
                 "===Generating Truth Table to a formula===",
-                "\n The given formula is:",
+                "\n The non-iff formula is:",
                 " ((p → (q → r)) → ((p → q) → (p → r))) ",
                 "Truth table result:",
                 " p\tq\tr\tResult",

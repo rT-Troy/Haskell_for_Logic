@@ -118,7 +118,7 @@ dpllClausesPrint :: [[LogicFormula]] -> Doc
 dpllClausesPrint clauses =      text "\n===Applying DPLL algorithm to a clause set===\n\n" <+>
                                 text "The clause set is: \n" <+>
                                 text "{" <+> clausesPrint clauses <+> text "}" <+>
-                                unitClausesPrint (concat clauses) (sortOn length clauses) <+>
+                                unitClausePrint (sortOn length clauses) <+>
                                 text "\n\n The result is: \n" <+>
                                 dpllResultPrint (dpllClauses clauses) <+> text "\n"
 
@@ -166,27 +166,25 @@ dpllResultSatisfy boolValues
 -- >
 -- > $ unitClausePrint ([[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']])
 -- > 
-unitClausePrint :: LogicFormula -> [[LogicFormula]] -> Doc
-unitClausePrint _ [] = text "\n\nSo the answer of this case is { □ }."  -- ^ The answer of □, the case has been eliminated all clauses.
-unitClausePrint start clauses@(x:xs)
+unitClausePrint :: [[LogicFormula]] -> Doc
+unitClausePrint [] = text "\n\nSo the answer of this case is { □ }."  -- ^ The answer of □, the case has been eliminated all clauses.
+unitClausePrint clauses@(x:xs)
         | null xs && null nextClauses=  text "\n\nSo the answer of this case is { Ø }."    -- ^ The case of clause set Ø, but have to print the last clause as unit.
         | length x > 1 && not (null xs) && checkNextSplit clauses = -- ^ The case of shortest clause have more than 1 literal, so need to split.
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 1: \n" <+>
-                                        emptyPrint nextClauses <+> unitClausePrint start nextClauses <+> 
+                                        emptyPrint nextClauses <+> unitClausePrint nextClauses <+> 
                                         text "\n\nIn case of " <+> formulaExpre start <+> text " -> 0: \n" <+>
-                                        emptyPrint negNextClauses <+> unitClausePrint start negNextClauses
+                                        emptyPrint negNextClauses <+> unitClausePrint negNextClauses
         | otherwise =      text "\n\n" <+> emptyPrint nextClauses <+>  -- ^ checkNextSplit clauses: The case do not need to split.
                                         text "       Use unit " <+> emptyPrint [x] <+> 
-                                        unitClausePrint start nextClauses
-                where   
+                                        unitClausePrint nextClauses
+                where   start = head x
                         nextClauses = sortOn length (dpllElim start clauses) -- ^ sortOn to make the shortest clause in the front.
                         negNextClauses = sortOn length (dpllElim (revNeg start) clauses)    -- ^ The negation for split case.
 
-unitClausesPrint :: [LogicFormula] -> [[LogicFormula]] -> Doc
-unitClausesPrint [] clauses = text ""
-unitClausesPrint (x:xs) clauses = unitClausePrint x clauses
 
 
+                        
 unitClause :: [[LogicFormula]] -> [[LogicFormula]]
 unitClause [] = []  -- ^ The answer of □, the case has been eliminated all clauses.
 unitClause clauses@(x:xs)
