@@ -24,6 +24,7 @@ import CNF
 
 
 -- | Main function: Generate a pretty truth table of a given formula.
+--
 -- Example:
 -- 
 -- > $ truthTablePrint ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
@@ -44,7 +45,7 @@ truthTablePrint formula =   text "===Generating Truth Table to a formula===\n\n"
                             text "The non-iff formula is:\n" <+>
                             formulaExpre elimFormula <+>
                             text "\nTruth table result:\n" <+>
-                            text (firstRow ++ intercalate "\n" [rowString elimFormula status | status <- allPosStatus (uniqVars (tbElimIff formula))] ) <+>
+                            text (firstRow ++ intercalate "\n" [rowString elimFormula status | status <- allPosStatus (uniqVars elimFormula)] ) <+>
                             text "\n\n" <+> truthTableResultPrint results <+>
                             text "\n"
                         where
@@ -55,6 +56,7 @@ truthTablePrint formula =   text "===Generating Truth Table to a formula===\n\n"
 
 tbElimIff :: LogicFormula -> LogicFormula
 tbElimIff (f1 :<-> f2) = tbElimIff ((f1 :-> f2) :/\ (f2 :-> f1))
+tbElimIff (Neg (f1 :<-> f2)) = Neg (tbElimIff ((f1 :-> f2) :/\ (f2 :-> f1)))
 tbElimIff f = f
 
 rowString :: LogicFormula -> [(Char, BoolValue)] -> [Char]
@@ -117,6 +119,6 @@ calculator (Neg formula) status = if calculator formula status == T then F else 
 calculator (formula1 :/\ formula2) status = if calculator formula1 status == T && calculator formula2 status == T then T else F
 calculator (formula1 :\/ formula2) status = if calculator formula1 status == F && calculator formula2 status == F then F else T
 calculator (formula1 :-> formula2) status = if calculator formula1 status == T && calculator formula2 status == F then F else T
-calculator (_ :<-> _) _ = error "The formula is invalid."
+calculator (_ :<-> _) _ = error "Error: The formula should not contain '<->'."
 calculator Bottom _ = F
 calculator Top _ = T

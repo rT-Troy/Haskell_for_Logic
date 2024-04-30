@@ -1,10 +1,19 @@
 ## Haskell Project of Logic
 
 
-```cabal install split```
+### Documentation
+
+cabal will auto-generate documentation during ```cabal build```.
+```
+stack haddock
+```
+
 
 
 ### Testing
+There are two calculator for proving the correctness.
+
+[Online Calculator](https://www.erpelstolz.at/gateway/formular-uk-zentral.html)
 
 
 [Calculator](https://www.wolframalpha.com/)
@@ -12,8 +21,6 @@
 and  or  implies  iff 
 convert (A implies (B implies C)) to CNF
 ```
-
-https://www.erpelstolz.at/gateway/formular-uk-zentral.html
 
 #### Testing by stack
 ```
@@ -29,13 +36,6 @@ cabal test
 cabal test --enable-coverage --disable-library-coverage
 ```
 
-### Documentation
-
-```
-stack haddock
-```
-
-cabal will generate documentation during ```cabal build```.
 
 ### Generate github CI
 

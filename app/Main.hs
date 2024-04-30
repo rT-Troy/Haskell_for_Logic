@@ -15,6 +15,7 @@ import TruthTable
 --
 -- Example input:
 -- > ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
+-- > (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
 -- > ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 main :: IO ()
 main = do
