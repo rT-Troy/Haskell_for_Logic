@@ -1,4 +1,5 @@
-{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports -fno-warn-missing-export-lists #-}
+
 {-|
 Module      : Resolution
 Description : Propositional Resolution

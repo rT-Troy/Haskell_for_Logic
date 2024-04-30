@@ -17,6 +17,7 @@ import TruthTable
 -- > ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
 -- > (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
 -- > ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
+-- > ((Var 'p' :\/ (Neg (Var 'q'))) :<-> (Var 'q' :/\ Var 'p'))
 main :: IO ()
 main = do
     putStrLn "Please input a logic formula:"
@@ -44,6 +45,8 @@ mainClauses = do
     print (prClausesPrint clauses)
     print (clausesSatisfy (dpllResultSatisfy (dpllClauses clauses)) (prResultSatisfy (prFinalClauses clauses)))
 
+
+-- | Compare the results of Truth Table, DPLL, and Resolution. Then print the result.
 formulaSatisfy :: Bool -> Bool -> Bool -> Doc
 formulaSatisfy tt dpll pr
     | tt && dpll && pr = text "All three methods get answer satisfiable."
@@ -56,9 +59,7 @@ formulaSatisfy tt dpll pr
     | otherwise = text "All three methods get answer unsatisfiable."
 
 
-
-
-
+-- | Compare the results of DPLL, and Resolution. Then print the result.
 clausesSatisfy :: Bool -> Bool -> Doc
 clausesSatisfy dpll pr
     | dpll && pr = text "Both DPLL and Resolution get answer satisfiable."

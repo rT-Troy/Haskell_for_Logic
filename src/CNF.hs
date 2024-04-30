@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports -Wno-incomplete-patterns #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant bracket" #-}
 {-|
 Module      : CNF
 Description : Implementing Conjunctive Normal Form (CNF) algorithm and DPLL algorithm using Haskell functions
@@ -14,8 +16,8 @@ commentary with @some markup@.
 module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauses, strToLogicFormula,
               step4delsub, step4Cpmtr, checkTautologicals, checkTautological,
               removeTautological, step4elim, stringFilter, toClausesString, 
-              splitConj, splitDisj) where
-import Data.List ( sortOn, nub)
+              splitConj, splitDisj, restoreConj, restoreDisj, dnfToFormula, dnf4elim, toDisjClauses, toDisjClausesString, step3Dis) where
+import Data.List ( sortOn, nub, isInfixOf)
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Data.List.Split ( splitOn )
 import Common
@@ -126,7 +128,7 @@ step2 (_ :<-> _) = error "Error: '<->' notation detected. Ensure the formula has
 step2 f = f
 
 
-checkCNF :: LogicFormula -> LogicFormu
+
 
 -- | CNF step3: distribute disjunctions ∨ into conjunctions ∧.
 -- | Do not accept the original formula involving iff ↔.
@@ -142,9 +144,9 @@ checkCNF :: LogicFormula -> LogicFormu
 -- > $ step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 -- > ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))
 step3 :: LogicFormula -> LogicFormula
-step3 f@((a :/\ b) :\/ (c :/\ d)) = step3Dis (a :/\ b) :\/ step3Dis (c :/\ d)    -- The case of DNF :/\ :\/.
-step3 f@(x :\/ (y :/\ z)) = step3Con f
-step3 f@((x :/\ y) :\/ z) = step3Con f
+step3 ((a :/\ b) :\/ (c :/\ d)) = step3Dis (a :/\ b) :\/ step3Dis (c :/\ d)    -- The case of DNF :/\ :\/.
+step3 f@(_ :\/ (_ :/\ _)) = step3Con f
+step3 f@((_ :/\ _) :\/ _) = step3Con f
 step3 (x :\/ y) = step3 x :\/ step3 y
 step3 (x :/\ y) = step3 x :/\ step3 y
 step3 (Neg f) = revNeg (step3 f)
@@ -152,31 +154,27 @@ step3 (_ :-> _) = error "Error: '->' notation detected. Ensure the formula has b
 step3 (_ :<-> _) = error "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
 step3 f = f
 
+
+-- | CNF step3: distribute disjunctions ∨ into conjunctions ∧.
 step3Con :: LogicFormula -> LogicFormula
 step3Con (x :\/ (y :/\ z)) = step3Con (step3Con (step3Con (step3Con x :\/ step3Con y) :/\ step3Con (step3Con x :\/ step3Con z)))
 step3Con ((x :/\ y) :\/ z) = step3Con (step3Con (step3Con (step3Con x :\/ step3Con z) :/\ step3Con (step3Con y :\/ step3Con z)))
+step3Con (x :\/ y) = step3Con x :\/ step3Con y
+step3Con (x :/\ y) = step3Con x :/\ step3Con y
+step3Con (Neg f) = revNeg (step3Con f)
 step3Con f = f
 
+
+-- | CNF step3: distribute conjunctions ∧ into disjunctions ∨.
 step3Dis :: LogicFormula -> LogicFormula
 step3Dis (x :/\ (y :\/ z)) =  step3Dis (step3Dis (step3Dis x :/\ step3Dis y) :\/ step3Dis (step3Dis x :/\ step3Dis z))
 step3Dis ((x :\/ y) :/\ z) =  step3Dis (step3Dis (step3Dis x :/\ step3Dis z) :\/ step3Dis (step3Dis y :/\ step3Dis z))
+step3Dis (x :\/ y) = step3Dis x :\/ step3Dis y
+step3Dis (x :/\ y) = step3Dis x :/\ step3Dis y
+step3Dis (Neg f) = revNeg (step3Dis f)
 step3Dis f = f
 
-dnfToCnf :: LogicFormula -> LogicFormula
-dnfToCnf (x :\/ (y :/\ z)) = dnfToCnf (dnfToCnf (dnfToCnf (dnfToCnf x :\/ dnfToCnf y) :/\ dnfToCnf (dnfToCnf x :\/ dnfToCnf z)))
-dnfToCnf ((x :/\ y) :\/ z) = dnfToCnf (dnfToCnf (dnfToCnf (dnfToCnf x :\/ dnfToCnf z) :/\ dnfToCnf (dnfToCnf y :\/ dnfToCnf z)))
-dnfToCnf f = f
 
--- > $ cnfDistributive [[Var 'p',Var 'q'],[Neg (Var 'q')],[Neg (Var 'r')]] [[Var 'q',Var 'r'],[Neg (Var 'p')],[Neg (Var 'q')]]
--- > [[Var 'p',Var 'q',Var 'q',Var 'r'],[Var 'p',Var 'q',Neg (Var 'p')],[Var 'p',Var 'q',Neg (Var 'q')],
--- >  [Neg (Var 'q'),Var 'q',Var 'r'],[Neg (Var 'q'),Neg (Var 'p')],[Neg (Var 'q'),Neg (Var 'q')],[Neg (Var 'r'),Var 'q',Var 'r'],[Neg (Var 'r'),Neg (Var 'p')],[Neg (Var 'r'),Neg (Var 'q')]]
-cnfDistributive :: [[LogicFormula]] -> [[LogicFormula]] -> [[LogicFormula]]
-cnfDistributive [] _ = []
-cnfDistributive (x:xs) y = cnfEachDistri x y ++ cnfDistributive xs y
-
-cnfEachDistri :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
-cnfEachDistri _ [] = []
-cnfEachDistri x (y:ys) = (x ++ y) : cnfEachDistri x ys
 
 -- | CNF step4: simplify resulting CNF-formulas by removing duplicate literals.
 --
@@ -188,10 +186,11 @@ cnfEachDistri x (y:ys) = (x ++ y) : cnfEachDistri x ys
 -- > $ step4 (((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
---step4 ((a :/\ b) :\/ (c :/\ d)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length nextCNFClauses))))-- step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length newCNFClauses))))
---    where nextCNFClauses = cnfDistributive (toDisj (a :/\ b)) (toDisj (c :/\ d)) 
-step4 list@(_ :/\ _) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))   -- ^ sortOn: make the shortest clause in the front
-step4 list@(_ :\/ _) = step4delsub (sortOn length (step4Cpmtr (filter (not . null) (map dnf4elim (sortOn length (toDisjClauses list))))))
+step4 list@((_ :\/ _) :/\ (_ :\/ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF
+step4 list@((_ :/\ _) :\/ (_ :/\ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses newDNF)))))    -- DNF
+    where newDNF = (step3Con (dnfToFormula (filter ((/= [])) (map dnf4elim (sortOn length (toDisjClauses list))))))
+step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))
+
 
 -- | Removing the clauses if it is a subset of another clause in the clause set.
 --
@@ -228,7 +227,7 @@ checkTautologicals x (y:ys)
     | otherwise = checkTautologicals x ys
 
 
-
+-- | Check if exists tautological literals in a clause.
 checkTautological :: [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> Bool
 checkTautological [] _ [] _ = True
 checkTautological (x:xs) orixss (y:ys) oriyss
@@ -244,7 +243,9 @@ removeTautological x (y:ys)
     | checkTautological x x y y = removeTautological x ys
     | otherwise = y : removeTautological x ys
 
--- | Removing the duplicate literals and tautological literals such as p and ¬p in the same clause.
+
+-- | This elimination is for the case of CNF.
+-- | Removing the duplicate literals (left one) and tautological literals such as p and ¬p in the same clause.
 --
 -- Example:
 --
@@ -259,10 +260,12 @@ step4elim literals@(x:xs)
     | otherwise = x : step4elim xs
 
 
+-- | This elimination is for the case of DNF.
+-- | Removing the duplicate literals (left one) and tautological literals such as p and ¬p in the same clause.
 dnf4elim :: [LogicFormula] -> [LogicFormula]
 dnf4elim [] = []
 dnf4elim literals@(x:xs)
-    | Bottom `elem` literals || revNeg x `elem` xs = step4elim xs    -- ^ p ∧ ¬ p = ⊥, φ ∧ ⊥ = ⊥, could be ignored, so remove the entire clause.
+    | Bottom `elem` literals || revNeg x `elem` xs = []    -- ^ p ∧ ¬ p = ⊥, φ ∧ ⊥ = ⊥, could be ignored, so remove the entire clause.
     | Top `elem` literals = step4elim (filter (/= Bottom) literals)    -- ^ , φ ∧ ⊤ = φ, so if tautological literals exist or ⊤ exists, only keep ⊤.
     | x `elem` xs = step4elim (nub literals)    -- ^ remove duplicate literals
     | otherwise = x : step4elim xs
@@ -277,29 +280,32 @@ toClauses :: LogicFormula -> [[LogicFormula]]
 toClauses formula = map (map strToLogicFormula) (toClausesString (stringFilter formula))
 
 
+-- | Convert a DNF formula to a list of clauses.
+-- | Then have to transfer to CNF formula.
+toDisjClauses :: LogicFormula -> [[LogicFormula]]
+toDisjClauses formula =  map (map strToLogicFormula) (toDisjClausesString (stringFilter formula))
+
+
+-- | Convert a String CNF formula to a list of Stirng clauses.
 toClausesString :: String -> [[String]]
 toClausesString formula = map splitDisj (splitConj formula)
 
-
--- > $ toDisj ((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r')))
--- > [[Var 'p',Var 'q'],[Neg (Var 'q')],[Neg (Var 'r')]]
--- > $ toDisj ((Var 'q' :\/ Var 'r') :/\ (Neg (Var 'p') :/\ Neg (Var 'q')))
--- > [[Var 'q',Var 'r'],[Neg (Var 'p')],[Neg (Var 'q')]]
-toDisjClauses :: LogicFormula -> [[LogicFormula]]
-toDisjClauses formula =  map (map strToLogicFormula) (toClausesString (stringFilter formula))
-
-toDisjString :: String -> [[String]]
-toDisjString formula =  map splitConj (splitDisj formula)
+-- | Convert a String DNF formula to a list of Stirng clauses.
+toDisjClausesString :: String -> [[String]]
+toDisjClausesString formula = map splitConj (splitDisj formula)
 
 
+-- | Split a String conjunction formula to a list of literals.
 splitConj :: String -> [String]
 splitConj = splitOn ":/\\"
 
 
+-- | Split a String disjunction formula to a list of literals.
 splitDisj :: String -> [String]
 splitDisj = splitOn ":\\/"
 
 
+-- | Convert a formula to string.
 stringFilter :: LogicFormula -> String
 stringFilter (Var c) = "Var '" ++ [c] ++ "'"
 stringFilter (Neg f) = "Neg (" ++ stringFilter f ++ ")"
@@ -311,5 +317,22 @@ stringFilter Bottom = "Bottom"
 stringFilter Top = "Top"
 
 
+-- | Retore a clause to a conjunction of literals.
+restoreConj :: [LogicFormula] -> LogicFormula
+restoreConj [x] = x
+restoreConj (x:xs) = x :/\ restoreConj xs
+
+
+-- | Retore a clause to a disjunction of literals.
+restoreDisj :: [LogicFormula] -> LogicFormula
+restoreDisj [x] = x
+restoreDisj (x:xs) = x :\/ restoreDisj xs
+
+-- | Convert DNF clauses to a CNF formula.
+dnfToFormula :: [[LogicFormula]] -> LogicFormula
+dnfToFormula = restoreDisj . map restoreConj
+
+
+-- | Convert a String to a LogicFormula.
 strToLogicFormula :: String -> LogicFormula
 strToLogicFormula formula = read formula :: LogicFormula

@@ -60,8 +60,10 @@ cnfTests = describe "CNF Tests" $ do
         cnfAlgo (Top :-> Var 'q') `shouldBe` [[Var 'q']]
         -- ((p → r) ↔ (q → p))      answer is not [[Neg (Var 'r'),Neg (Var 'q'),Var 'p'],[Var 'q',Neg (Var 'p'),Var 'r']]
         cnfAlgo ((Var 'p' :-> Var 'r') :<-> (Var 'q' :-> Var 'p')) `shouldBe` [[Var 'p',Neg (Var 'q')],[Neg (Var 'p'),Var 'r']]
-        -- (p → (q ∧ (¬ q)))    The answer shows (Q ∨ ¬P) ∧ (¬Q ∨ ¬P), is also correct.
+        -- (p → (q ∧ (¬ q)))    The answer shows (Q ∨ ¬P) ∧ (¬Q ∨ ¬P) which is also correct.
         cnfAlgo (Var 'p' :-> (Var 'q' :/\ Neg (Var 'q'))) `shouldBe` [[Neg (Var 'p')]]
+        -- (¬ ((p ∨ q) ↔ (q ∨ r)))    The answer shows (¬R ∨ ¬P) ∧ ¬Q ∧ (P ∨ R) which is also correct.
+        cnfAlgo (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))) `shouldBe` [[Neg (Var 'q')],[Neg (Var 'r'),Var 'q']]
 
 
     it "step1: eliminate iff and implication from the input formula" $ do
@@ -99,33 +101,18 @@ cnfTests = describe "CNF Tests" $ do
         evaluate (step2 (Var 'p' :<-> Var 'q')) `shouldThrow`
          errorCall "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
 
+
     it "step3" $ do
+        -- (p → q)
         evaluate (step3 (Var 'p' :-> Var 'q')) `shouldThrow`
          errorCall "Error: '->' notation detected. Ensure the formula has been processed by 'step1'."
         -- (p ↔ q)
         evaluate (step3 (Var 'p' :<-> Var 'q')) `shouldThrow`
          errorCall "Error: '<->' notation detected. Ensure the formula has been processed by 'step1'."
-    --     step3 ((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) `shouldBe`
-    --      (Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))
 
-    --     step3 ((Var 'q' :\/ Var 'r') :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe`
-    --      ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'p')) :/\ ((Var 'q' :\/ Var 'r') :\/ Neg (Var 'q'))
-    --     -- week7 Exercise Question 7.2
-    --     step3 ((Neg (Var 'p') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) `shouldBe`
-    --      (Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ ((Neg (Var 'q') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\ (Neg (Var 'r') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')))
 
-    --     step3 ((Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ ((Var 'p' :\/ Var 'q') :/\ Bottom :/\ Top)) `shouldBe`
-    --      (Neg (Var 'p') :\/ (Neg (Var 'q') :/\ Neg (Var 'r'))) :/\ (((Var 'p' :\/ Var 'q') :/\ Bottom) :/\ Top)
-
-    --     step3 (Top :\/ Bottom :\/ (Neg (Var 'p') :/\ Neg (Var 'q'))) `shouldBe` 
-    --      ((Top :\/ Bottom) :\/ Neg (Var 'p')) :/\ ((Top :\/ Bottom) :\/ Neg (Var 'q'))
-
-    --     evaluate (step3 (Var 'p' :-> Var 'q')) `shouldThrow`
-    --      errorCall "There should have no -> notation, make sure the fomula has been processed by step1imp."
-
-    --     evaluate (step3 (Var 'p' :<-> Var 'q')) `shouldThrow`
-    --      errorCall "There should have no <-> notation, make sure the fomula has been processed by step1imp."
-
+    it "step3Dis" $ do
+        step3Dis (Var 'p' :/\ (Var 'q' :\/ Var 'r')) `shouldBe` (Var 'p' :/\ Var 'q') :\/ (Var 'p' :/\ Var 'r')
 
 
     it "step4delsub" $ do
@@ -134,41 +121,43 @@ cnfTests = describe "CNF Tests" $ do
          errorCall "Error: 'Bottom' notation detected. Ensure the formula has been processed by 'step4elim'."
 
 
+
     it "step4elim" $ do
         -- In case of p ∨ ¬ p = ⊤
         step4elim [Neg (Var 'q'),Var 'q',Var 'r'] `shouldBe` [Top]
+
+    it "dnf4elim" $ do
+        step4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r']) `shouldBe` [Top]
+        step4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r',Top]) `shouldBe` [Top]
+        step4elim ([Neg (Var 'q'),Bottom]) `shouldBe` [Neg (Var 'q')]
+
+    
+    it "toDisjClausesString" $ do
+        toDisjClausesString "Var 'p' :/\\ Var 'q' :\\/ Neg (Var 'q') :\\/ Neg (Var 'r')" `shouldBe`
+         [["Var 'p' "," Var 'q' "],[" Neg (Var 'q') "],[" Neg (Var 'r')"]]
+
+
+    it "toDisjClauses" $ do
+        toDisjClauses ((Var 'p' :\/ Var 'q') :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) `shouldBe`
+         [[Var 'p'],[Var 'q',Neg (Var 'q'),Neg (Var 'r')]]
+
 
     it "stringFilter" $ do
         stringFilter ((Top :-> Var 'q') :<-> (Var 'q' :\/ Bottom)) `shouldBe` 
          "Top :-> Var 'q' :<-> Var 'q' :\\/ Bottom"
 
 
-    -- it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do
-    --     step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) `shouldBe`
-    --      [[Neg (Var 'p'),Var 'q',Var 'r']]
-    --     -- week7 Exercise Question 7.2
-    --     step4 ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
-    --      ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
-    --      [[Neg (Var 'q')],[Var 'q',Var 'r'],[Var 'p',Var 'q']]
+    it "step4: simplify resulting CNF-formulas by removing duplicate literals" $ do
+        step4 ((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) `shouldBe`
+         [[Neg (Var 'p'),Var 'q',Var 'r']]
+        -- week7 Exercise Question 7.2
+        step4 ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
+         ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe`
+         [[Neg (Var 'q')],[Top]]
+        
+        step4 ((Var 'p' :/\ Var 'q') :\/ (Var 'q' :/\ Var 'r')) `shouldBe` [[Var 'p',Var 'q'],[Var 'p',Var 'r'],[Var 'q',Var 'r']]
 
-    --     step4 (((Neg (Var 'p') :/\ Neg (Var 'q')) :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q'))) `shouldBe`
-    --      [[Neg (Var 'p')],[Neg (Var 'q')],[Var 'r'],[Neg (Var 'r'),Var 'p',Var 'q']]
-    --     -- step4 (((Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'q' :/\ (Neg (Var 'q') :/\ Neg (Var 'r')))) :/\ ((Var 'q' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))) :\/ (Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q'))))) `shouldBe`
-         
-    -- it "toClauses" $ do
-    --     toClauses ((Neg (Var 'p') :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r')) :/\
-    --      ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ ((Var 'p' :\/ Var 'q') :\/ Var 'r'))) `shouldBe` 
-    --      [[Neg (Var 'p'),Var 'p',Var 'q',Var 'r'],[Neg (Var 'q')],[Neg (Var 'r'),Var 'p',Var 'q',Var 'r']]
-    --     -- week7 Exercise Question 7.2
-    --     toClauses ((Var 'p' :\/ (Var 'q' :\/ Var 'r')) :/\ ((Neg (Var 'p') :/\ Neg (Var 'q')) :/\ Neg (Var 'r'))) `shouldBe`
-    --      [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')]]
 
-    -- it "stringFilter" $ do
-    --     stringFilter ((Top :-> Var 'q') :<-> (Var 'q' :\/ Bottom)) `shouldBe` 
-    --      "Top :-> Var 'q' :<-> Var 'q' :\\/ Bottom"
-
-    -- it "strToLogicFormula" $ do
-    --     strToLogicFormula "Var 'p'" `shouldBe` Var 'p'
-    --     strToLogicFormula "Neg (Var 'p')" `shouldBe` Neg (Var 'p')
-    --     strToLogicFormula "Neg (Var 'p') :/\\ Top" `shouldBe` (Neg (Var 'p') :/\ Top)
-    --     strToLogicFormula (show (Var 'p')) `shouldBe` Var 'p'
+    it "dnfToFormula" $ do
+        dnfToFormula [[Var 'p',Neg (Var 'q'),Neg (Var 'r')],[Var 'r',Neg (Var 'p'),Neg (Var 'q')]] `shouldBe`
+         (Var 'p' :/\ (Neg (Var 'q') :/\ Neg (Var 'r'))) :\/ (Var 'r' :/\ (Neg (Var 'p') :/\ Neg (Var 'q')))

@@ -50,7 +50,7 @@ truthTableTests = describe "TruthTable Tests" $ do
 
         calculator (Var 'p' :\/ Var 'q') [('p',F),('q',F)] `shouldBe` F
 
-        evaluate (calculator (Var 'p' :<-> Var 'q') [('p',T),('q',T)]) `shouldThrow` errorCall "The formula is invalid."
+        evaluate (calculator (Var 'p' :<-> Var 'q') [('p',T),('q',T)]) `shouldThrow` errorCall "Error: The formula should not contain '<->'."
 
         evaluate (calculator (Var 'p' :-> Var 'q') [('p',T)]) `shouldThrow` errorCall "Variable 'q' not found in status."
 
