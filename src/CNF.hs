@@ -3,15 +3,15 @@
 {-# HLINT ignore "Redundant bracket" #-}
 {-|
 Module      : CNF
-Description : Implementing Conjunctive Normal Form (CNF) algorithm and DPLL algorithm using Haskell functions
+Description : Implementing Conjunctive Normal Form (CNF) algorithm using Haskell functions
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
 Stability   : experimental
 Portability : haskell 2010
 
-Here is a longer description of this module, containing some
-commentary with @some markup@.
+Implementing Conjunctive Normal Form (CNF) algorithm to a logic formula or clause set using Haskell functions
+Copyright   : 2024 Jun Zhang
 -}
 module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauses, strToLogicFormula,
               step4delsub, step4Cpmtr, checkTautologicals, checkTautological,

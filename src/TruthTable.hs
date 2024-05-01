@@ -3,15 +3,14 @@
 {-# HLINT ignore "Eta reduce" #-}
 {-|
 Module      : TruthTable
-Description : Construct a truth table for a given formula
+Description : Construct a truth table for a given formula.
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
 Stability   : experimental
 Portability : haskell 2010
 
-Here is a longer description of this module, containing some
-commentary with @some markup@.
+Construct a truth table for a given formula.
 -}
 module TruthTable ( truthTablePrint, rowString, tbElimIff, ttSatisfy, truthTableResults, truthTableResultPrint, uniqVars, allPosStatus, calculator, showBool ) where
 

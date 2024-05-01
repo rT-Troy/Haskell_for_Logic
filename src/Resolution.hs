@@ -2,15 +2,14 @@
 
 {-|
 Module      : Resolution
-Description : Propositional Resolution
+Description : Implementing Propositional Resolution using Haskell functions.
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
 Stability   : experimental
 Portability : haskell 2010
 
-Here is a longer description of this module, containing some
-commentary with @some markup@.
+Implementing Propositional Resolution to a given formula or clause set using Haskell functions.
 -}
 module Resolution (
     prFormulaPrint,
@@ -68,10 +67,6 @@ prResultSatisfy clauses
     | prValidChecker finalClauses = False
     | otherwise = True
         where finalClauses = prFinalClauses clauses
-
-
-
-
 
 
 -- | Implementing propositional resolution rule to get the final clause set.

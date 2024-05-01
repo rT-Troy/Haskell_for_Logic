@@ -1,15 +1,14 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-|
 Module      : Common
-Description : Common definitions for the project
+Description : Common definitions and common functions for the project.
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
 Stability   : experimental
 Portability : haskell 2010
 
-Here is a longer description of this module, containing some
-commentary with @some markup@.
+This function includes the common definitions for the project.
 -}
 module Common ( LogicFormula(..)
               , BoolValue(..)

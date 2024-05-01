@@ -1,15 +1,14 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-|
 Module      : DPLL
-Description : Implementing Davis-Putnam-Logemann-Lovelace (DPLL) algorithm and DPLL algorithm using Haskell functions
+Description : Implementing Davis-Putnam-Logemann-Lovelace (DPLL) algorithm using Haskell functions.
 Copyright   : 2024 Jun Zhang
 License     : BSD-style (see LICENSE)
 Maintainer  : yotroy@foxmail.com
 Stability   : experimental
 Portability : haskell 2010
 
-Here is a longer description of this module, containing some
-commentary with @some markup@.
+Implementing Davis-Putnam-Logemann-Lovelace (DPLL) algorithm to a given formula or clause set using Haskell functions.
 -}
 module DPLL ( dpllFormulaPrint
             , dpllFormula

@@ -15,9 +15,9 @@ import TruthTable
 
 --
 -- Example input:
+-- > ((Var 'p') :<-> (Var 'q'))
 -- > ((Var 'p' :\/ Var 'q') :-> (Var 'q' :\/ Var 'r'))
 -- > (Neg ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r')))
--- > ((Var 'p' :\/ Var 'q') :<-> (Var 'q' :\/ Var 'r'))
 -- > ((Var 'p' :\/ (Neg (Var 'q'))) :<-> (Var 'q' :/\ Var 'p'))
 main :: IO ()
 main = do
@@ -39,6 +39,10 @@ main = do
 
 -- | Main function: Accept a clause set input, then implementing DPLL, and Resolution.
 -- | The satisfiability results given by each approach are derived, then compared to determine if the program is working properly.
+--
+-- Example input:
+-- > --lecture 6
+-- > [[Var 'p',Var 'q'],[Var 'p',Neg(Var 'q')],[Neg(Var 'p'),Var 'q'],[Neg(Var 'p'),Neg(Var 'q')]]
 mainClauses :: IO ()
 mainClauses = do
     putStrLn "Please input a clause set:"
