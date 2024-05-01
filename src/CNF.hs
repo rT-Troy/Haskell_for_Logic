@@ -186,10 +186,10 @@ step3Dis f = f
 -- > $ step4 (((Neg (Var 'p') :\/ (Var 'q' :\/ Var 'r')) :/\ (Neg (Var 'q') :\/ (Var 'q' :\/ Var 'r'))) :/\ ((Neg (Var 'q') :/\ Neg (Var 'r')) :\/ (Var 'p' :\/ Var 'q')))
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
-step4 list@((_ :\/ _) :/\ (_ :\/ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF
-step4 list@((_ :/\ _) :\/ (_ :/\ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses newDNF)))))    -- DNF
-    where newDNF = (step3Con (dnfToFormula (filter ((/= [])) (map dnf4elim (sortOn length (toDisjClauses list))))))
-step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))
+step4 list@((_ :\/ _) :/\ (_ :\/ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF case
+step4 list@((_ :/\ _) :\/ (_ :/\ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses newCNF)))))    -- DNF
+    where newCNF = (step3Con (dnfToFormula (filter ((/= [])) (map dnf4elim (sortOn length (toDisjClauses list))))))    -- Convert DNF to CNF
+step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF cases
 
 
 -- | Removing the clauses if it is a subset of another clause in the clause set.
@@ -266,9 +266,9 @@ dnf4elim :: [LogicFormula] -> [LogicFormula]
 dnf4elim [] = []
 dnf4elim literals@(x:xs)
     | Bottom `elem` literals || revNeg x `elem` xs = []    -- ^ p ∧ ¬ p = ⊥, φ ∧ ⊥ = ⊥, could be ignored, so remove the entire clause.
-    | Top `elem` literals = step4elim (filter (/= Bottom) literals)    -- ^ , φ ∧ ⊤ = φ, so if tautological literals exist or ⊤ exists, only keep ⊤.
-    | x `elem` xs = step4elim (nub literals)    -- ^ remove duplicate literals
-    | otherwise = x : step4elim xs
+    | Top `elem` literals = dnf4elim (filter (/= Top) literals)    -- ^ , φ ∧ ⊤ = φ, so if tautological literals exist or ⊤ exists, only keep ⊤.
+    | x `elem` xs = dnf4elim (nub literals)    -- ^ remove duplicate literals
+    | otherwise = x : dnf4elim xs
 
 -- | Convert a CNF formula to a list of clauses,
 -- |  then convert each clause to a list of literals.

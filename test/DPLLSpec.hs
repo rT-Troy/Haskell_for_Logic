@@ -7,14 +7,18 @@ import Text.PrettyPrint (render)
 import Common
 import DPLL
     ( dpllFormulaPrint
+    , dpllFormula
     , dpllClausesPrint
+    , dpllClauses
     , dpllResultPrint
     , dpllResultPrint
-    , unitClausePrint
+    , eachClausePrint
+    , eachClause
     , emptyPrint
-    , checkNextSplit
+    , dpllCheckNextSplit
     , dpllElimAll
     , dpllElim
+    , dpllResultSatisfy
     , toCNFClauses)
     
 dpllTests :: Spec
@@ -108,14 +112,26 @@ dpllTests = describe "DPLL Tests" $ do
         render (dpllClausesPrint clauses) `shouldBe` expectedResult
 
 
+    it "dpllFormula" $ do
+        dpllFormula ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')) `shouldBe` [T]
+        dpllFormula (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r'))) `shouldBe` [T,T]
+
+
+    it "dpllClauses" $ do
+        dpllClauses [[Var 'p',Var 'q',Neg(Var 'r')],[Neg(Var 'p'),Var 'q',Neg(Var 'r')],
+         [Neg(Var 'q'),Neg(Var 'r')],[Neg(Var 'p'),Var 'r'],[Var 'p',Var 'r']] `shouldBe` 
+         [F,F]
+
+
     it "toCNFClauses: " $ do
         -- week 6 lecture
         toCNFClauses (Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))) `shouldBe`
          [[Var 'p'],[Var 'q'],[Neg (Var 'q'),Neg (Var 'r')]]
 
 
-    it "checkNextSplit" $ do
-        checkNextSplit [[Var 'p'], [Neg (Var 'p')], [Var 'r']] `shouldBe` True
+    it "dpllCheckNextSplit" $ do
+        dpllCheckNextSplit [[Var 'p'], [Neg (Var 'p')], [Var 'r']] `shouldBe` True
+
 
     it "checkNextSplit" $ do
         dpllElimAll (Neg (Var 'p')) [[Var 'p'], [Neg (Var 'p')]] `shouldBe` [[]]
@@ -128,6 +144,16 @@ dpllTests = describe "DPLL Tests" $ do
         dpllElimAll (Neg (Var 'p')) [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],
          [Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p',Var 'r']] `shouldBe` [[]]
 
+
+    it "dpllResultSatisfy" $ do
+        dpllResultSatisfy [F,T,T] `shouldBe` False
+        dpllResultSatisfy [T,T] `shouldBe` True
+
+
+    it "eachClause" $ do
+        -- week 6 lecture
+        eachClause [[Var 'p',Var 'q',Neg (Var 'r')],[Neg (Var 'p'),Var 'q',Neg (Var 'r')],[Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Var 'r'],[Var 'p']] `shouldBe`
+         [[],[Neg (Var 'r')],[Neg (Var 'r')]]
 
     it "dpllElim: week 6 lecture" $ do
         -- week 6 lecture

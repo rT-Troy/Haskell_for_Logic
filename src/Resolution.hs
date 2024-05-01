@@ -12,7 +12,18 @@ Portability : haskell 2010
 Here is a longer description of this module, containing some
 commentary with @some markup@.
 -}
-module Resolution  where
+module Resolution (
+    prFormulaPrint,
+    prClausesPrint,
+    prResultPrint,
+    prResultSatisfy,
+    prFinalClauses,
+    prFinalClausesPrint,
+    prEachClause,
+    prResolver,
+    prElim,
+    prValidChecker
+) where
 
 import Text.PrettyPrint ( Doc, (<+>), text )
 
@@ -20,9 +31,7 @@ import Common
 import CNF
 import Data.List (sortOn, nub)
 
--- | Main function: Implementing propositional resolution in pretty print.
-
-
+-- | Main function: Implement Propositional Resolution for a logic formula in pretty print.
 prFormulaPrint :: LogicFormula -> Doc
 prFormulaPrint formula =
     text "\n===Apply Resolution to a formula===\n\n" <+>
@@ -38,6 +47,13 @@ prFormulaPrint formula =
             negFormula = revNeg formula
 
 
+-- | Main function: Implement Propositional Resolution for a clause set in pretty print.
+prClausesPrint :: [[LogicFormula]] -> Doc
+prClausesPrint clauses =    text "\n===Applying Resolution to a clause set===" <+>
+                            text "\n\n The resolution clause set is: \n" <+>
+                            prFinalClausesPrint clauses <+> text "\n\n" <+>
+                            prResultPrint (prResultSatisfy clauses)
+
 
 -- | Print the result of propositional resolution, which is either unsatisfiable or satisfiable.
 prResultPrint :: Bool -> Doc
@@ -45,6 +61,8 @@ prResultPrint satis = if satis then text "It yields Ø, which is satisfiable.\n"
                         else text "It yields empty clause □, which is unsatisfiable.\n"
 
 
+-- | The satisfiability result of a clauses is determined by Propositional Resolution.
+-- | This function will be used to compare the satisfiability of Truth Table and Resolution in Main.hs.
 prResultSatisfy :: [[LogicFormula]] -> Bool
 prResultSatisfy clauses
     | prValidChecker finalClauses = False
@@ -52,11 +70,7 @@ prResultSatisfy clauses
         where finalClauses = prFinalClauses clauses
 
 
-prClausesPrint :: [[LogicFormula]] -> Doc
-prClausesPrint clauses =    text "\n===Applying Resolution to a clause set===\n\n" <+>
-                            text "\n\n The resolution clause set is: \n" <+>
-                            prFinalClausesPrint clauses <+> text "\n\n" <+>
-                            prResultPrint (prResultSatisfy clauses)
+
 
 
 

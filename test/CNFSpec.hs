@@ -127,9 +127,9 @@ cnfTests = describe "CNF Tests" $ do
         step4elim [Neg (Var 'q'),Var 'q',Var 'r'] `shouldBe` [Top]
 
     it "dnf4elim" $ do
-        step4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r']) `shouldBe` [Top]
-        step4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r',Top]) `shouldBe` [Top]
-        step4elim ([Neg (Var 'q'),Bottom]) `shouldBe` [Neg (Var 'q')]
+        dnf4elim [Neg (Var 'q'),Var 'q',Var 'r'] `shouldBe` []
+        dnf4elim [Var 'q',Var 'r',Var 'r',Top] `shouldBe` [Var 'q',Var 'r']
+        dnf4elim [Neg (Var 'q'),Bottom] `shouldBe` []
 
     
     it "toDisjClausesString" $ do

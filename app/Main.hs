@@ -10,7 +10,8 @@ import TruthTable
 
 
 
--- | Main function: Implementing 
+-- | Main function: Accept a logic formula input, then implementing Truth Table, DPLL, and Resolution.
+-- | The satisfiability results given by each approach are derived, then compared to determine if the program is working properly.
 
 --
 -- Example input:
@@ -36,6 +37,8 @@ main = do
                           (prResultSatisfy (prFinalClauses revClauses)))
 
 
+-- | Main function: Accept a clause set input, then implementing DPLL, and Resolution.
+-- | The satisfiability results given by each approach are derived, then compared to determine if the program is working properly.
 mainClauses :: IO ()
 mainClauses = do
     putStrLn "Please input a clause set:"

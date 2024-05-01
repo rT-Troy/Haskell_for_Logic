@@ -21,11 +21,24 @@ truthTableTests = describe "TruthTable Tests" $ do
                 ]
         render (truthTablePrint formula) `shouldBe` expectedResult
 
+    it "tbElimIff: eliminate iff in a given formula" $ do
+        tbElimIff ((Var 'p' :<-> Var 'q') :-> (Var 'q' :<-> Var 'r')) `shouldBe` ((Var 'p' :-> Var 'q') :/\ (Var 'q' :-> Var 'p')) :-> ((Var 'q' :-> Var 'r') :/\ (Var 'r' :-> Var 'q'))
+        
+        tbElimIff (Neg ((Var 'p' :<-> Var 'q') :<-> (Var 'q' :<-> Var 'r'))) `shouldBe` Neg ((((Var 'p' :-> Var 'q') :/\ (Var 'q' :-> Var 'p')) :-> ((Var 'q' :-> Var 'r') :/\ (Var 'r' :-> Var 'q'))) :/\ (((Var 'q' :-> Var 'r') :/\ (Var 'r' :-> Var 'q')) :-> ((Var 'p' :-> Var 'q') :/\ (Var 'q' :-> Var 'p'))))
+        
+        tbElimIff (Neg (Bottom :\/ Top)) `shouldBe` Neg (Bottom :\/ Top)
+
+
     it "truthTableResultPrint" $ do
         render (truthTableResultPrint [F,F,F]) `shouldBe` "All results are false, the formula is unsatisfiable."
         
         render (truthTableResultPrint [T,F,T]) `shouldBe` "Exist true results, the formula is satisfiable."
 
+
+    it "ttSatify: check if a formula is satisfiable" $ do
+        ttSatisfy [F,F,F] `shouldBe` False
+
+        ttSatisfy [T,F,T] `shouldBe` True
 
     it "uniqVars: return all unique variables in a formula" $ do
         uniqVars ((Var 'p' :\/ Var 'd') :-> (Var 'q' :/\ Var 'r')) `shouldBe` "pdqr"
