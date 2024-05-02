@@ -36,14 +36,11 @@ prFormulaPrint formula =
     text "\n===Apply Resolution to a formula===\n\n" <+>
     text "The given formula is: \n" <+>
     formulaExpre formula <+>
-    text "\n\n The negation is: \n" <+>
-    formulaExpre negFormula <+>
     text "\n\n If the formula is valid, so its negation should be un-satisfiable... \n" <+>
     text " If the formula is not valid, so its negation should be satisfiable... \n\n" <+>
-    cnfPrint negFormula <+>
-    prClausesPrint (cnfAlgo negFormula)
-        where
-            negFormula = revNeg formula
+    cnfPrint formula <+>
+    prClausesPrint (cnfAlgo formula)
+
 
 
 -- | Main function: Implement Propositional Resolution for a clause set in pretty print.

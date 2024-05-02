@@ -82,19 +82,17 @@ dpllFormulaPrint :: LogicFormula -> Doc
 dpllFormulaPrint formula =      text "\n===Applying DPLL algorithm to a formula===\n\n" <+>
                                 text "The given formula is: \n" <+>
                                 formulaExpre formula <+>
-                                text "\n\n The negation is: \n" <+>
-                                formulaExpre negFormula <+>
                                 text "\n\n If the formula is valid, so its negation should be un-satisfiable... \n" <+>
                                 text "If the formula is not valid, so its negation should be satisfiable... \n\n" <+>
-                                cnfPrint negFormula <+>
+                                cnfPrint formula <+>
                                 dpllClausesPrint clauses
-                where   negFormula = revNeg formula
-                        clauses = toCNFClauses negFormula
+                where   
+                        clauses = toCNFClauses formula
 
 dpllFormula :: LogicFormula -> [BoolValue]
 dpllFormula formula =   dpllClauses clauses
-                where   negFormula = revNeg formula
-                        clauses = toCNFClauses negFormula
+                where   
+                        clauses = toCNFClauses formula
 
 -- | Print out the result of DPLL algorithm to clause set
 -- Example:

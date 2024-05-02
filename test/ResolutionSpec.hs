@@ -9,15 +9,12 @@ resolutionTests :: Spec
 resolutionTests = describe "PropResolution Tests" $ do
 
     it "prFormulaPrint" $ do
-        let formula = (Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')
+        let formula = Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))
         let expectedResult = unlines [
                 "",
                 "===Apply Resolution to a formula===",
                 "",
                 " The given formula is: ",
-                " ((p ∧ q) → (q ∧ r)) ",
-                "",
-                " The negation is: ",
                 " (¬ ((p ∧ q) → (q ∧ r))) ",
                 "",
                 " If the formula is valid, so its negation should be un-satisfiable... ",

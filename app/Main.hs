@@ -27,14 +27,13 @@ main = do
     print (truthTablePrint formula)
             -- Use revNeg to get the negation of the formula,
             -- negFormula will check validity by DPLL and Resolution.
-    let negFormula = revNeg formula
-    let revClauses = cnfAlgo negFormula
-    print (cnfPrint negFormula)
-    print (dpllClausesPrint revClauses)
-    print (prClausesPrint revClauses)
+    let clauses = cnfAlgo formula
+    print (cnfPrint formula)
+    print (dpllClausesPrint clauses)
+    print (prClausesPrint clauses)
     print (formulaSatisfy (ttSatisfy (truthTableResults (tbElimIff formula) (allPosStatus (uniqVars (tbElimIff formula)))))
-                          (dpllResultSatisfy (dpllClauses revClauses)) 
-                          (prResultSatisfy (prFinalClauses revClauses)))
+                          (dpllResultSatisfy (dpllClauses clauses)) 
+                          (prResultSatisfy (prFinalClauses clauses)))
 
 
 -- | Main function: Accept a clause set input, then implementing DPLL, and Resolution.

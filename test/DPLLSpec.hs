@@ -25,15 +25,12 @@ dpllTests :: Spec
 dpllTests = describe "DPLL Tests" $ do
 
     it "dpllFormulaPrint" $ do
-        let formula = (Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')
+        let formula = Neg ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r'))
         let expectedResult = unlines [
                 "",
                 "===Applying DPLL algorithm to a formula===",
                 "",
                 " The given formula is: ",
-                " ((p ∧ q) → (q ∧ r)) ",
-                "",
-                " The negation is: ",
                 " (¬ ((p ∧ q) → (q ∧ r))) ",
                 "",
                 " If the formula is valid, so its negation should be un-satisfiable... ",
@@ -114,7 +111,7 @@ dpllTests = describe "DPLL Tests" $ do
 
     it "dpllFormula" $ do
         dpllFormula ((Var 'p' :/\ Var 'q') :-> (Var 'q' :/\ Var 'r')) `shouldBe` [T]
-        dpllFormula (Neg ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r'))) `shouldBe` [T,T]
+        dpllFormula ((Var 'p' :/\ Var 'q') :<-> (Var 'q' :/\ Var 'r')) `shouldBe` [T,T]
 
 
     it "dpllClauses" $ do
