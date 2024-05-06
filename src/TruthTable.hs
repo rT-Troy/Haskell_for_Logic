@@ -43,23 +43,29 @@ import CNF
 -- > F       F       F       T
 -- >  All results are true, the formula is valid. 
 truthTablePrint :: LogicFormula -> Doc
-truthTablePrint formula =   text "===Generating Truth Table to a formula===\n\n" <+>
-                            text "The non-iff formula is:\n" <+>
-                            formulaExpre elimFormula <+>
-                            text "\nTruth table result:\n" <+>
-                            text (firstRow ++ intercalate "\n" [rowString elimFormula status | status <- allPosStatus (uniqVars elimFormula)] ) <+>
-                            text "\n\n" <+> truthTableResultPrint results <+>
-                            text "\n"
-                        where
-                            elimFormula = tbElimIff formula
-                            firstRow = intercalate "\t" (map (: []) (uniqVars elimFormula)) ++ "\tResult\n"
-                            results = truthTableResults elimFormula (allPosStatus (uniqVars elimFormula))
+truthTablePrint formula =   
+        text "===Generating Truth Table to a formula===\n\n" <+>
+        text "The non-iff formula is:\n" <+>
+        formulaExpre elimFormula <+>
+        text "\nTruth table result:\n" <+>
+        text (firstRow ++ intercalate "\n" [rowString elimFormula status |
+         status <- allStatus] ) <+>
+        text "\n\n" <+> truthTableResultPrint results <+>
+        text "\n"
+    where
+        elimFormula = tbElimIff formula
+        firstRow = intercalate "\t" (map (: []) (uniqVars elimFormula)) ++ "\tResult\n"
+        allStatus = allPosStatus (uniqVars elimFormula)
+        results = truthTableResults elimFormula allStatus
 
 
 -- | Eliminate iff in a given formula, the new formula will be used to generate truth table.
+--
+-- Example:
+-- > $ tbElimIff (Var 'p' :<-> (Var 'q' :-> Var 'r'))
+-- > (Var 'p' :-> (Var 'q' :-> Var 'r')) :/\ ((Var 'q' :-> Var 'r') :-> Var 'p')
 tbElimIff :: LogicFormula -> LogicFormula
 tbElimIff (f1 :<-> f2) = tbElimIff ((f1 :-> f2) :/\ (f2 :-> f1))
-tbElimIff (Neg (f1 :<-> f2)) = Neg (tbElimIff ((f1 :-> f2) :/\ (f2 :-> f1)))
 tbElimIff (Var v) = Var v
 tbElimIff (Neg formula) = Neg (tbElimIff formula)
 tbElimIff (f1 :/\ f2) = tbElimIff f1 :/\ tbElimIff f2
@@ -70,14 +76,22 @@ tbElimIff Top = Top
 
 
 -- | Show the T/F of truth talbe in a more readable way.
+--
+-- Example:
+-- > $ rowString (((Var 'p') :\/ (Var 'd')) :-> ((Var 'q') :/\(Var 'r'))) [('p',T),('d',T),('q',T),('r',T)]
+-- > "T\tT\tT\tT\tT"
 rowString :: LogicFormula -> [(Char, BoolValue)] -> [Char]
-rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars (tbElimIff formula))) ++
-                           "\t" ++ showBool (calculator (tbElimIff formula) status)
+rowString formula status = intercalate "\t" (map (\v -> showBool (calculator (Var v) status)) (uniqVars formula)) ++
+                           "\t" ++ showBool (calculator formula status)
 
 
 -- | Collection of all result set of possible assignments.
+--
+-- Example:
+-- > $ truthTableResults ((Var 'p') :\/ (Var 'd')) [[('p',T),('d',T)],[('p',T),('d',F)],[('p',F),('d',T)],[('p',F),('d',F)]]
+-- > [T,T,T,F]
 truthTableResults :: LogicFormula -> [[(Char, BoolValue)]] -> [BoolValue]
-truthTableResults formula status = map (calculator (tbElimIff formula)) status
+truthTableResults formula status = map (calculator formula) status
 
 
 -- | The satisfiability result of a formula is determined by the truth table.
@@ -89,6 +103,10 @@ ttSatisfy boolValues
 
 
 -- | Print the result according to satisfiability.
+--
+-- Example:
+-- > $ truthTableResultPrint [T,T,T,F]
+-- > "Exist true results, the formula is satisfiable."
 truthTableResultPrint :: [BoolValue] -> Doc
 truthTableResultPrint boolValues
     | all (== T) boolValues = text "All results are true, the formula is valid."

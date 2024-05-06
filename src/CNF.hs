@@ -77,7 +77,7 @@ cnfAlgo :: LogicFormula -> [[LogicFormula]]
 cnfAlgo formula = step4 (step3 (step2 (step1 formula)))
 
 
--- | CNF step1: eliminate iff ↔ and implication → from the input formula.
+-- | CNF step1: eliminate biconditional ↔ and implication → from the input formula.
 --
 -- Example:
 --

@@ -50,6 +50,7 @@ showBool F = "F"
 --
 -- > $ formulaExpre ((Var 'p' :-> (Var 'q' :-> Var 'r')) :-> ((Var 'p' :-> Var 'q') :-> (Var 'p' :-> Var 'r')))
 -- > ((p → (q → r)) → ((p → q) → (p → r)))
+
 formulaExpre :: LogicFormula -> Doc
 formulaExpre (Var v) = text [v]
 formulaExpre (Neg v) = parens (text "¬" <+> formulaExpre v)
