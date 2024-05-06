@@ -67,18 +67,18 @@ prResultSatisfy clauses
 
 
 -- | Implementing propositional resolution rule to get the final clause set.
--- > $ pcFinalClauses [[Var 'p', Var 'q', Var 'r'],[Neg (Var 'p'), Neg (Var 'q')],[Neg (Var 'r')]]
+-- > $ prFinalClauses [[Var 'p', Var 'q', Var 'r'],[Neg (Var 'p'), Neg (Var 'q')],[Neg (Var 'r')]]
 -- [[Var 'p',Var 'q',Var 'r'],[Neg (Var 'p'),Neg (Var 'q')],[Neg (Var 'r')],[Var 'r'],[Var 'p',Var 'q'],[Neg (Var 'p'),Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'p'),Neg (Var 'q'),Var 'r'],[]]
 -- >
--- > $ pcFinalClauses [[Var 'p', Var 'q', Var 'r'],[Var 'p', Neg (Var 'q')],[Neg (Var 'r')]]
+-- > $ prFinalClauses [[Var 'p', Var 'q', Var 'r'],[Var 'p', Neg (Var 'q')],[Neg (Var 'r')]]
 -- [[Var 'p',Var 'q',Var 'r'],[Var 'p',Neg (Var 'q')],[Neg (Var 'r')],[Var 'r',Var 'p'],[Var 'p',Var 'q'],[Var 'p',Neg (Var 'q'),Neg (Var 'r')],[Neg (Var 'q'),Var 'r',Var 'p'],[Var 'p']]
 prFinalClauses :: [[LogicFormula]] -> [[LogicFormula]]
 prFinalClauses []  = []
 prFinalClauses clauses@(x:xs)
     | prValidChecker clauses = clauses    -- Detected the empty clause, so the clause set is valid.
     | nextNewClauses == xs = clauses    -- The clause set cannot be resolved anymore.
-    | otherwise = x : prFinalClauses (nub (xs ++ nextNewClauses))
-        where nextNewClauses = prEachClause x xs
+    | otherwise = x : prFinalClauses (nub (nextNewClauses))
+        where nextNewClauses = nub (prEachClause x xs)
 
 -- | Print the final clause set of propositional resolution. 
 prFinalClausesPrint :: [[LogicFormula]] -> Doc
@@ -87,7 +87,7 @@ prFinalClausesPrint clauses@(x:xs)
     | prValidChecker clauses = clausesPrint clauses    -- End the loop, show the resolution clause set.
     | nextNewClauses == xs = clausesPrint clauses    -- The clause set cannot be resolved anymore. 
     | otherwise = clausesPrint [x] <+> prFinalClausesPrint (nub (xs ++ nextNewClauses))
-        where nextNewClauses = prEachClause x xs
+        where nextNewClauses = nub (prEachClause x xs)
 
 
 -- | Apply resolution by specific clause x with all other clauses in the clause set.
@@ -95,7 +95,7 @@ prFinalClausesPrint clauses@(x:xs)
 -- > [[Neg (Var 'r')],[Var 'p',Var 'q']]
 prEachClause :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
 prEachClause _ [] = []
-prEachClause clause (x:xs) = prResolver clause x : prEachClause clause xs
+prEachClause clause (x:xs) = prResolver clause x ++ prEachClause clause xs
 
 
 -- | Implementing propositional resolution rule.
@@ -103,19 +103,25 @@ prEachClause clause (x:xs) = prResolver clause x : prEachClause clause xs
  --
  -- Example:
  --
- -- > $ prResolver [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r']
+ -- > $ prResolver [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r', (Neg (Var 'q'))]
  -- > [Var 'p',Var 'q',Neg (Var 's')]
-prResolver :: [LogicFormula] -> [LogicFormula] -> [LogicFormula]
-prResolver clause1 clause2 = prElim (clause1 ++ clause2)
+prResolver :: [LogicFormula] -> [LogicFormula] -> [[LogicFormula]]
+prResolver clause1 clause2 = nub (prElim (clause1 ++ clause2) (clause1 ++ clause2))
 
 
 -- | The elimination of tautological literals in the clause set.
-prElim :: [LogicFormula] -> [LogicFormula]
-prElim [] = []
-prElim (x:xs)
-    | x `elem` xs = prElim xs
-    | revNeg x `elem` xs = prElim (filter (\y -> y /= x && y /= revNeg x) xs)
-    | otherwise = x : prElim xs
+prElim :: [LogicFormula] -> [LogicFormula] -> [[LogicFormula]]
+prElim [] _ = []
+prElim (x:xs) oriClauses
+    | revNeg x `elem` xs = rmFirst (revNeg x) (rmFirst x oriClauses) : prElim xs oriClauses
+    | otherwise = prElim xs oriClauses
+
+
+rmFirst :: LogicFormula -> [LogicFormula] -> [LogicFormula]
+rmFirst _ [] = []
+rmFirst x (y:ys)
+    | x == y = ys
+    | otherwise = y : rmFirst x ys
 
 
 -- | Check if the final clause set is valid.

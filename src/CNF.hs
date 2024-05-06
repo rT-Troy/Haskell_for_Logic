@@ -209,14 +209,15 @@ step4delsub clauses@(x:xs)
 
 
 -- | Remove the tautological clauses in a clause set.
--- | Such as for CNF: ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = T.
--- | DNF: ((¬ r) ∧ ((¬ q) ∧ p))) ∨ ((q ∧ ((¬ p) ∧ r)) = F.
+-- | Such as for CNF: ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = F.
+-- | DNF: ((¬ r) ∧ ((¬ q) ∧ p))) ∨ ((q ∧ ((¬ p) ∧ r)) = T.
 -- | ((p → r) ↔ (q → p))
 step4Cpmtr :: [[LogicFormula]] -> [[LogicFormula]]
 step4Cpmtr [] = []
-step4Cpmtr (x:xs)
+step4Cpmtr clauses@(x:xs)
+    | length xs == 1 = clauses    -- if only exist two clauses, then stop the recursion.
     | checkTautologicals x xs = step4Cpmtr (removeTautological x xs)
-    | otherwise = x : step4Cpmtr xs
+    | otherwise = x : step4Cpmtr xs 
 
 
 -- | Check if exists tautological clause in a clause set.
