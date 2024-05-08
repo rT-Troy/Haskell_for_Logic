@@ -21,6 +21,7 @@ module Resolution (
     prEachClause,
     prResolver,
     prElim,
+    rmFirst,
     prValidChecker
 ) where
 
@@ -31,19 +32,27 @@ import CNF
 import Data.List (sortOn, nub)
 
 -- | Main function: Implement Propositional Resolution for a logic formula in pretty print.
+-- | It will first apply CNF algorithm to the formula, then apply Resolution to the clause set.
 prFormulaPrint :: LogicFormula -> Doc
 prFormulaPrint formula =
     text "\n===Apply Resolution to a formula===\n\n" <+>
     text "The given formula is: \n" <+>
     formulaExpre formula <+>
-    text "\n\n If the formula is valid, so its negation should be un-satisfiable... \n" <+>
-    text " If the formula is not valid, so its negation should be satisfiable... \n\n" <+>
     cnfPrint formula <+>
     prClausesPrint (cnfAlgo formula)
 
 
 
 -- | Main function: Implement Propositional Resolution for a clause set in pretty print.
+-- 
+-- Example:
+-- > $ prClausesPrint [[Var 'p',Var 'q'],[Var 'p',Neg(Var 'q')],[Neg(Var 'p'),Var 'q'],[Neg(Var 'p'),Neg(Var 'q')]]
+-- > ===Applying Resolution to a clause set=== 
+-- > 
+-- >  The resolution clause set is: 
+-- >  { p , q } { p , (¬ q) } { (¬ p) , q } { (¬ p) , (¬ q) } { p } { q },  { q , (¬ q) },  { p , (¬ p) },  { (¬ q) , q },  { p , (¬ p) },  { (¬ q) },  { p },  { p , (¬ q) },  { (¬ q) , p },  { (¬ p) },  { q },  { (¬ p) , q },  { q , (¬ p) },  { q , (¬ q) },  { (¬ p) , p },  { (¬ q) },  { (¬ p) },  { (¬ p) , (¬ q) },  { (¬ q) , (¬ p) },  { p },  { [] },  { q },  { (¬ q) } 
+-- > 
+-- >  It yields empty clause □, which is unsatisfiable.
 prClausesPrint :: [[LogicFormula]] -> Doc
 prClausesPrint clauses =    text "\n===Applying Resolution to a clause set===" <+>
                             text "\n\n The resolution clause set is: \n" <+>
@@ -75,18 +84,27 @@ prResultSatisfy clauses
 prFinalClauses :: [[LogicFormula]] -> [[LogicFormula]]
 prFinalClauses []  = []
 prFinalClauses clauses@(x:xs)
-    | prValidChecker clauses = clauses    -- Detected the empty clause, so the clause set is valid.
-    | nextNewClauses == xs = clauses    -- The clause set cannot be resolved anymore.
-    | otherwise = x : prFinalClauses (nub (nextNewClauses))
+    | prValidChecker clauses = clauses    -- Detected the empty clause, so the clause set is unsatisfiable.
+    | allElem nextNewClauses xs = clauses    -- The clause set cannot be resolved anymore.
+    | otherwise = x : prFinalClauses (xs ++ nextNewClauses)
         where nextNewClauses = nub (prEachClause x xs)
+
+allElem :: [[LogicFormula]] -> [[LogicFormula]] -> Bool
+allElem [] _ = True
+allElem (x:xs) ys = x `elem` ys && allElem xs ys
+
+-- | Check if the final clause set is unsatisfiable.
+-- | If the empty clause [] is in the clause set, then it is unsatisfiable.
+prValidChecker :: [[LogicFormula]] -> Bool
+prValidChecker clauses = [] `elem` clauses
 
 -- | Print the final clause set of propositional resolution. 
 prFinalClausesPrint :: [[LogicFormula]] -> Doc
 prFinalClausesPrint []  = text ""
 prFinalClausesPrint clauses@(x:xs)
     | prValidChecker clauses = clausesPrint clauses    -- End the loop, show the resolution clause set.
-    | nextNewClauses == xs = clausesPrint clauses    -- The clause set cannot be resolved anymore. 
-    | otherwise = clausesPrint [x] <+> prFinalClausesPrint (nub (xs ++ nextNewClauses))
+    | allElem nextNewClauses xs = clausesPrint clauses    -- The clause set cannot be resolved anymore. 
+    | otherwise = clausesPrint [x] <+> prFinalClausesPrint (xs ++ nextNewClauses)
         where nextNewClauses = nub (prEachClause x xs)
 
 
@@ -103,20 +121,26 @@ prEachClause clause (x:xs) = prResolver clause x ++ prEachClause clause xs
  --
  -- Example:
  --
- -- > $ prResolver [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r', (Neg (Var 'q'))]
+ -- > $ prResolver [Var 'p', Var 'q', Neg (Var 'r')] [Neg (Var 's'), Var 'r']
  -- > [Var 'p',Var 'q',Neg (Var 's')]
+ -- > $ prResolver [Var 'p',Neg (Var 'r')] [Neg (Var 'p'),Var 'r']
 prResolver :: [LogicFormula] -> [LogicFormula] -> [[LogicFormula]]
 prResolver clause1 clause2 = nub (prElim (clause1 ++ clause2) (clause1 ++ clause2))
-
-
 -- | The elimination of tautological literals in the clause set.
+-- 
+-- Example:
+-- > $ prElim [Var 'p',Neg (Var 'r'),Neg (Var 'p'),Var 'r'] [Var 'p',Neg (Var 'r'),Neg (Var 'p'),Var 'r']
+-- > [[Neg (Var 'r'),Var 'r'],[Var 'p',Neg (Var 'p')]]
 prElim :: [LogicFormula] -> [LogicFormula] -> [[LogicFormula]]
 prElim [] _ = []
 prElim (x:xs) oriClauses
-    | revNeg x `elem` xs = rmFirst (revNeg x) (rmFirst x oriClauses) : prElim xs oriClauses
+    | revNeg x `elem` xs = nub (rmFirst (revNeg x) (rmFirst x oriClauses)) : prElim xs oriClauses
     | otherwise = prElim xs oriClauses
-
-
+-- | Remove the first occurrence of a specific literal in a list.
+--
+-- Example:
+-- > $ rmFirst (Var 'p') [Var 'p',Var 'p',Var 'p',Neg (Var 'r'),Neg (Var 'p'),Var 'r']
+-- > [Var 'p',Var 'p',Neg (Var 'r'),Neg (Var 'p'),Var 'r']
 rmFirst :: LogicFormula -> [LogicFormula] -> [LogicFormula]
 rmFirst _ [] = []
 rmFirst x (y:ys)
@@ -124,7 +148,3 @@ rmFirst x (y:ys)
     | otherwise = y : rmFirst x ys
 
 
--- | Check if the final clause set is valid.
--- | If the empty clause [] is in the clause set, then it is valid.
-prValidChecker :: [[LogicFormula]] -> Bool
-prValidChecker clauses = [] `elem` clauses

@@ -14,9 +14,8 @@ Implementing Conjunctive Normal Form (CNF) algorithm to a logic formula or claus
 Copyright   : 2024 Jun Zhang
 -}
 module CNF  ( cnfPrint, cnfAlgo, step1, step2, step3, step4, toClauses, strToLogicFormula,
-              step4delsub, step4Cpmtr, checkTautologicals, checkTautological,
-              removeTautological, step4elim, stringFilter, toClausesString, 
-              splitConj, splitDisj, restoreConj, restoreDisj, dnfToFormula, dnf4elim, toDisjClauses, toDisjClausesString, step3Dis) where
+              step4delsub, step4Cpmtr, step4elim, stringFilter, toClausesString, dnfToCNF,
+              splitConj, splitDisj, restoreConj, restoreDisj, dnf4elim, toDisjClauses, toDisjClausesString, step3Dis) where
 import Data.List ( sortOn, nub, isInfixOf)
 import Text.PrettyPrint ( Doc, (<+>), text )
 import Data.List.Split ( splitOn )
@@ -187,8 +186,8 @@ step3Dis f = f
 -- > [[Neg (Var 'p'),Var 'q',Var 'r'],[Neg (Var 'q') :/\ Neg (Var 'r'),Var 'p',Var 'q']]
 step4 :: LogicFormula -> [[LogicFormula]]
 step4 list@((_ :\/ _) :/\ (_ :\/ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF case
-step4 list@((_ :/\ _) :\/ (_ :/\ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses newCNF)))))    -- DNF
-    where newCNF = (step3Con (dnfToFormula (filter ((/= [])) (map dnf4elim (sortOn length (toDisjClauses list))))))    -- Convert DNF to CNF
+step4 list@((_ :/\ _) :\/ (_ :/\ _)) = step4delsub (sortOn length (step4Cpmtr (map step4elim newCNF)))    -- DNF
+    where newCNF = dnfToCNF (filter ((/= [])) (map dnf4elim (sortOn length (toDisjClauses list))))    -- Convert DNF to CNF
 step4 list = step4delsub (sortOn length (step4Cpmtr (map step4elim (sortOn length (toClauses list)))))    -- CNF cases
 
 
@@ -212,37 +211,18 @@ step4delsub clauses@(x:xs)
 -- | Such as for CNF: ((¬ r) ∨ ((¬ q) ∨ p))) ∧ ((q ∨ ((¬ p) ∨ r)) = F.
 -- | DNF: ((¬ r) ∧ ((¬ q) ∧ p))) ∨ ((q ∧ ((¬ p) ∧ r)) = T.
 -- | ((p → r) ↔ (q → p))
+-- | Remove the tautological clauses in a clause set.
+-- 
+-- Example:
+--
+-- > $ step4Cpmtr [[Neg (Var 'q'),Var 'q',Var 'r',Var 'r'],[Var 'q']]
+-- > [[Var 'q']]
 step4Cpmtr :: [[LogicFormula]] -> [[LogicFormula]]
-step4Cpmtr [] = []
-step4Cpmtr clauses@(x:xs)
-    | length xs == 1 = clauses    -- if only exist two clauses, then stop the recursion.
-    | checkTautologicals x xs = step4Cpmtr (removeTautological x xs)
-    | otherwise = x : step4Cpmtr xs 
+step4Cpmtr = filter (not . isTautological)
 
-
--- | Check if exists tautological clause in a clause set.
-checkTautologicals :: [LogicFormula] -> [[LogicFormula]] -> Bool
-checkTautologicals _ [] = False
-checkTautologicals x (y:ys)
-    | checkTautological x x y y = True
-    | otherwise = checkTautologicals x ys
-
-
--- | Check if exists tautological literals in a clause.
-checkTautological :: [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> [LogicFormula] -> Bool
-checkTautological [] _ [] _ = True
-checkTautological (x:xs) orixss (y:ys) oriyss
-    | length orixss /= length oriyss = False
-    | revNeg x `elem` oriyss && revNeg y `elem` orixss = checkTautological xs orixss ys oriyss
-    | otherwise = False
-
-
--- | Remove the tautological clause in a clause set.
-removeTautological :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
-removeTautological _ [] = []
-removeTautological x (y:ys)
-    | checkTautological x x y y = removeTautological x ys
-    | otherwise = y : removeTautological x ys
+-- | Check if a clause is tautological.
+isTautological :: [LogicFormula] -> Bool
+isTautological clause = any (\x -> revNeg x `elem` clause) clause
 
 
 -- | This elimination is for the case of CNF.
@@ -259,10 +239,13 @@ step4elim literals@(x:xs)
     | Bottom `elem` literals = step4elim (filter (/= Bottom) literals)  -- ^ φ ∨ ⊥ = φ, so remove ⊥ in the clause
     | x `elem` xs = step4elim (nub literals)    -- ^ remove duplicate literals
     | otherwise = x : step4elim xs
-
-
 -- | This elimination is for the case of DNF.
--- | Removing the duplicate literals (left one) and tautological literals such as p and ¬p in the same clause.
+-- | Removing the duplicate literals (left one), return only ⊤ if tautological literals exist or ⊤ exists.
+--
+-- Example:
+--
+-- > $ dnf4elim ([Neg (Var 'q'),Var 'q',Var 'r',Var 'r'])
+-- > []
 dnf4elim :: [LogicFormula] -> [LogicFormula]
 dnf4elim [] = []
 dnf4elim literals@(x:xs)
@@ -317,21 +300,39 @@ stringFilter (f1 :<-> f2) = stringFilter f1 ++ " :<-> " ++ stringFilter f2
 stringFilter Bottom = "Bottom"
 stringFilter Top = "Top"
 
+-- | Convert a DNF to CNF
+dnfToCNF :: [[LogicFormula]] -> [[LogicFormula]]
+dnfToCNF [] = []
+dnfToCNF (x:xs) = foldr combineClauses [[]] (x:xs)
+
+-- | Combine two clause of clause set
+combineClauses :: [LogicFormula] -> [[LogicFormula]] -> [[LogicFormula]]
+combineClauses clause1 clause2s =
+    [c1 ++ c2 | c1 <- clause1List, c2 <- clause2s]
+  where
+    clause1List = [[literal] | literal <- clause1]
 
 -- | Retore a clause to a conjunction of literals.
+--
+-- Example:
+--
+-- > $ restoreConj [Var 'p',Var 'q']
+-- > Var 'p' :/\ Var 'q'
 restoreConj :: [LogicFormula] -> LogicFormula
 restoreConj [x] = x
 restoreConj (x:xs) = x :/\ restoreConj xs
 
 
 -- | Retore a clause to a disjunction of literals.
+--
+-- Example:
+--
+-- > $ restoreConj [Var 'p',Var 'q']
+-- > Var 'p' :\/ Var 'q'
 restoreDisj :: [LogicFormula] -> LogicFormula
 restoreDisj [x] = x
 restoreDisj (x:xs) = x :\/ restoreDisj xs
 
--- | Convert DNF clauses to a CNF formula.
-dnfToFormula :: [[LogicFormula]] -> LogicFormula
-dnfToFormula = restoreDisj . map restoreConj
 
 
 -- | Convert a String to a LogicFormula.

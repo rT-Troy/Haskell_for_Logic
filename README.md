@@ -35,10 +35,3 @@ cabal test
 
 cabal test --enable-coverage --disable-library-coverage
 ```
-
-
-### Generate github CI
-
-```
-haskell-ci github logichaskell.cabal
-```

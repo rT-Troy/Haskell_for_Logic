@@ -1,0 +1,26 @@
+.
+├── README.md
+├── Setup.hs
+├── app
+│   └── Main.hs
+├── cabal.project
+├── dist-newstyle
+├── haddocks
+├── logichaskell.cabal
+├── package.yaml
+├── src
+│   ├── CNF.hs
+│   ├── Common.hs
+│   ├── DPLL.hs
+│   ├── Resolution.hs
+│   └── TruthTable.hs
+├── stack.yaml
+├── stack.yaml.lock
+└── test
+    ├── CNFSpec.hs
+    ├── CommonSpec.hs
+    ├── DPLLSpec.hs
+    ├── ResolutionSpec.hs
+    ├── Spec.hs
+    └── TruthTableSpec.hs
+

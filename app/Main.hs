@@ -7,6 +7,8 @@ import Common
 import DPLL
 import Resolution
 import TruthTable 
+import Data.Maybe (fromMaybe)
+import Data.List (sortOn)
 
 
 
@@ -32,7 +34,7 @@ main = do
     print (dpllClausesPrint clauses)
     print (prClausesPrint clauses)
     print (formulaSatisfy (ttSatisfy (truthTableResults (tbElimIff formula) (allPosStatus (uniqVars (tbElimIff formula)))))
-                          (dpllResultSatisfy (dpllClauses clauses)) 
+                          (dpllResultSatisfy (dpllClauses clauses (fromMaybe [] (unitClause (sortOn length clauses))))) 
                           (prResultSatisfy (prFinalClauses clauses)))
 
 
@@ -42,6 +44,7 @@ main = do
 -- Example input:
 -- > --lecture 6
 -- > [[Var 'p',Var 'q'],[Var 'p',Neg(Var 'q')],[Neg(Var 'p'),Var 'q'],[Neg(Var 'p'),Neg(Var 'q')]]
+-- > [[Var 'p',Var 'q'],[Var 'p',Neg(Var 'q')],[Neg(Var 'p'),Var 'q'],[Neg(Var 'p'),Neg(Var 'r')]]
 mainClauses :: IO ()
 mainClauses = do
     putStrLn "Please input a clause set:"
@@ -49,7 +52,8 @@ mainClauses = do
     let clauses = read input :: [[LogicFormula]]
     print (dpllClausesPrint clauses)
     print (prClausesPrint clauses)
-    print (clausesSatisfy (dpllResultSatisfy (dpllClauses clauses)) (prResultSatisfy (prFinalClauses clauses)))
+    print (clausesSatisfy (dpllResultSatisfy (dpllClauses clauses (fromMaybe [] (unitClause (sortOn length clauses)))))
+     (prResultSatisfy (prFinalClauses clauses)))
 
 
 -- | Compare the results of Truth Table, DPLL, and Resolution. Then print the result.

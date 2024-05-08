@@ -16,11 +16,6 @@ resolutionTests = describe "PropResolution Tests" $ do
                 "",
                 " The given formula is: ",
                 " (¬ ((p ∧ q) → (q ∧ r))) ",
-                "",
-                " If the formula is valid, so its negation should be un-satisfiable... ",
-                "  If the formula is not valid, so its negation should be satisfiable... ",
-                "",
-                " ",
                 "===Apply CNF algorithm to a formula===",
                 "",
                 " The given formula is:",
@@ -41,7 +36,7 @@ resolutionTests = describe "PropResolution Tests" $ do
                 "===Applying Resolution to a clause set=== ",
                 "",
                 " The resolution clause set is: ",
-                " { p } { q } { (¬ q) , (¬ r) } { p , q } { p , (¬ q) , (¬ r) } { (¬ r) },  { p , (¬ r) },  { (¬ r) , p },  { (¬ q) , (¬ r) },  { (¬ q) , p , (¬ r) },  { p , q , (¬ r) },  { q , p , (¬ r) },  { q , (¬ r) , p },  { p , (¬ q) , (¬ r) },  { (¬ q) , (¬ r) , p } ",
+                " { p },  { q },  { (¬ q) , (¬ r) } ",
                 "",
                 " It yields Ø, which is satisfiable."
                 ]
@@ -55,7 +50,7 @@ resolutionTests = describe "PropResolution Tests" $ do
                 "===Applying Resolution to a clause set=== ",
                 "",
                 " The resolution clause set is: ",
-                " { p , q } { p , (¬ q) },  { (¬ p) , q },  { (¬ p) , (¬ q) },  { p },  { q },  { [] } ",
+                " { p , q } { p , (¬ q) } { (¬ p) , q } { (¬ p) , (¬ q) } { p } { q },  { q , (¬ q) },  { p , (¬ p) },  { (¬ q) , q },  { p , (¬ p) },  { (¬ q) },  { p },  { p , (¬ q) },  { (¬ q) , p },  { (¬ p) },  { q },  { (¬ p) , q },  { q , (¬ p) },  { q , (¬ q) },  { (¬ p) , p },  { (¬ q) },  { (¬ p) },  { (¬ p) , (¬ q) },  { (¬ q) , (¬ p) },  { p },  { [] },  { q },  { (¬ q) } ",
                 "",
                 " It yields empty clause □, which is unsatisfiable."
                 ]
@@ -77,4 +72,5 @@ resolutionTests = describe "PropResolution Tests" $ do
         prValidChecker [[Neg (Var 'p')],[Neg (Var 'q')],[Neg (Var 'r')],[Var 'p',Var 'q',Var 'r'],
          [Var 'q',Var 'r'],[Var 'p',Var 'r'],[Var 'r'],[Var 'p',Var 'q'],[Var 'q'],[Var 'p']] `shouldBe` False
 
-    
+    it "rmmFirst" $ do
+        rmFirst (Var 'p') [] `shouldBe` []
